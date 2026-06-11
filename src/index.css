@@ -152,13 +152,18 @@ button {
   white-space: nowrap;
 }
 
-.nav-links a {
+.nav-links a,
+.nav-route-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: #f4f6f6;
   font-size: clamp(7.5px, 0.75vw, 14px);
   font-weight: 850;
+}
+
+.nav-route-link-active {
+  color: #ff6b6b;
 }
 
 .nav-actions {
@@ -1362,6 +1367,158 @@ button {
   gap: clamp(46px, 4vw, 76px);
 }
 
+.hero-minihomes {
+  background: #020406;
+}
+
+.minihomes-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("/minihomes-hero.png");
+  background-size: cover;
+  background-position: 58% center;
+  filter: saturate(1.14) contrast(1.1) brightness(0.94);
+}
+
+.hero-minihomes::after {
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(2, 4, 6, 0.98) 0%, rgba(2, 4, 6, 0.78) 16%, rgba(2, 4, 6, 0.28) 36%, rgba(2, 4, 6, 0.04) 54%, rgba(2, 4, 6, 0.12) 70%, rgba(2, 4, 6, 0.55) 86%, rgba(2, 4, 6, 0.88) 100%),
+    linear-gradient(180deg, rgba(2, 4, 6, 0.18) 0%, transparent 18%, transparent 62%, rgba(2, 4, 6, 0.82) 86%, #020406 100%);
+}
+
+.minihomes-flagship-art {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(9, 14, 18, 0.96) 0%, rgba(9, 14, 18, 0.64) 26%, rgba(9, 14, 18, 0.02) 52%, rgba(9, 14, 18, 0.52) 100%),
+    radial-gradient(circle at 53% 51%, rgba(242, 41, 41, 0.16), transparent 34%),
+    url("/Generated image 1.png");
+  background-size: auto, auto, cover;
+  background-position: center, center, 68% center;
+  background-repeat: no-repeat;
+  filter: saturate(1.12) contrast(1.05);
+}
+
+.minihomes-service-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.anatomy-panel {
+  padding: clamp(21px, 1.85vw, 36px) clamp(21px, 1.95vw, 38px) clamp(17px, 1.45vw, 28px);
+}
+
+.anatomy-panel h2 {
+  margin: clamp(10px, 0.85vw, 16px) 0 clamp(8px, 0.65vw, 12px);
+  font-family: var(--font-brand);
+  font-size: clamp(19px, 1.55vw, 30px);
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.anatomy-lead {
+  margin: 0 0 clamp(15px, 1.25vw, 24px);
+  color: var(--muted);
+  font-size: clamp(9px, 0.78vw, 14px);
+  font-weight: 650;
+  max-width: 520px;
+  line-height: 1.55;
+}
+
+.anatomy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(8px, 0.8vw, 15px);
+}
+
+.anatomy-card {
+  min-height: clamp(92px, 7.6vw, 145px);
+  padding: clamp(14px, 1.2vw, 22px);
+  border: 1px solid rgba(220, 235, 243, 0.16);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(35, 43, 49, 0.77), rgba(15, 20, 24, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.anatomy-number {
+  display: block;
+  color: var(--red);
+  font-size: clamp(11px, 0.95vw, 16px);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+}
+
+.anatomy-card h3 {
+  margin: clamp(8px, 0.65vw, 12px) 0 clamp(5px, 0.45vw, 8px);
+  color: #fff;
+  font-size: clamp(9px, 0.82vw, 15px);
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.anatomy-card p {
+  margin: 0;
+  color: #d4dbdf;
+  font-size: clamp(7.5px, 0.68vw, 12px);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.minihomes-spec {
+  color: var(--red);
+  font-size: clamp(18px, 1.55vw, 30px) !important;
+  text-shadow: 0 0 14px var(--glow);
+}
+
+.minihomes-launch-logos {
+  align-items: center;
+  gap: clamp(18px, 2vw, 36px);
+}
+
+.minihomes-launch-stat {
+  font-family: var(--font-brand);
+  font-size: clamp(42px, 3.5vw, 64px);
+  color: var(--red);
+  line-height: 1;
+  text-shadow: 0 0 18px var(--glow);
+}
+
+.minihomes-launch-copy {
+  font-size: clamp(14px, 1.2vw, 22px);
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.minihomes-launch-copy small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: clamp(8px, 0.72vw, 13px);
+  font-weight: 650;
+}
+
+.minihomes-launch-domain {
+  font-size: clamp(11px, 0.95vw, 16px);
+  font-weight: 850;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.cta-panel-minihomes {
+  background-image:
+    linear-gradient(90deg, rgba(2, 4, 6, 0.88), rgba(2, 4, 6, 0.45) 45%, rgba(2, 4, 6, 0.2)),
+    linear-gradient(180deg, rgba(2, 4, 6, 0.15), rgba(2, 4, 6, 0.38)),
+    url("/minihomes-hero.png");
+  background-position: center, center, 58% center;
+}
+
+.cta-panel-minihomes .cta-fog-layer {
+  background-image:
+    linear-gradient(90deg, rgba(8, 13, 17, 0.06), rgba(220, 229, 235, 0.11) 42%, rgba(5, 8, 11, 0.05) 76%),
+    url("/minihomes-hero.png");
+  background-position: center, 58% center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cta-panel,
   .cta-panel::before,
@@ -1439,6 +1596,7 @@ button {
   }
 
   .hero-house,
+  .minihomes-hero-bg,
   .hero-copy,
   .inspection-card,
   .trust-row,
@@ -1453,7 +1611,8 @@ button {
     width: auto;
   }
 
-  .hero-house {
+  .hero-house,
+  .minihomes-hero-bg {
     position: absolute;
     inset: 0;
     height: auto;
@@ -1475,6 +1634,8 @@ button {
 
   .trust-row,
   .service-grid,
+  .minihomes-service-grid,
+  .anatomy-grid,
   .credential-grid,
   .review-grid,
   .footer-top,

@@ -191,3 +191,30 @@ Verification target: browser screenshot at `974px` viewport width, desktop compo
 
 - Desktop reference is the source of truth. Build desktop first at 974px verification width.
 - Below ~820px, stack hero/form/cards to avoid overflow while retaining the same dark/red visual system. Mobile is secondary and should not drive desktop spacing.
+
+## Session: Mini-Homes Branch (2025-06-11)
+
+### Routing
+- Added `react-router-dom` with `/` (Roofing) and `/mini-homes` (Mini-Homes).
+- Shared header component switches nav/CTA copy by variant.
+
+### Header
+- Roofing nav now includes **Mini-Homes** linking to `/mini-homes`.
+- Mini-Homes nav uses mockup labels: Models, Our Process, About Us, Gallery, Resources, Contact.
+- Mini-Homes phone/CTA: `(831) 262-3222`, Request Consultation.
+
+### Mini-Homes Page Structure
+Mirrors roofing section rhythm with container-specific content sourced from `minihomes-coming-soon.vercel.app`:
+1. Hero — full-bleed `minihomes-hero.png`, consultation form, trust row (Texas Built, Flexible Layouts, Turnkey Quality, Delivery Available).
+2. Flagship Model — 40ft modular specs panel (states-panel pattern).
+3. Why CMAC — 3 service cards (Turn-Key Delivery, Workforce Housing, Modular Construction).
+4. Process — 5-step build timeline.
+5. Engineered Specs — 6 credential-style stat cards.
+6. Anatomy — 6-layer build breakdown grid.
+7. Coming Soon strip — 5-day build cycle + `cmaccontainers.com`.
+8. Early Inquiries — review cards.
+9. Launch CTA — waitlist CTA with mini-homes hero background.
+10. Footer — Mini-Homes branding and contact.
+
+### Assets
+- `public/minihomes-hero.png` — clean text-free container home photo (1024×438). Full-bleed hero background with left/right readability gradients. Never use a UI mockup export that contains baked-in headline or form artwork.
