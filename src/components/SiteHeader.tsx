@@ -35,7 +35,7 @@ export function SiteHeader({ variant, menuOpen, onMenuToggle }: SiteHeaderProps)
 
   return (
     <header className="top-nav">
-      <Logo brand={variant === 'roofing' ? 'ROOFING' : 'MINI HOMES'} to={variant === 'roofing' ? '/' : '/mini-homes'} />
+      <Logo brand={variant === 'roofing' ? 'ROOFING' : 'CONTAINERS'} to={variant === 'roofing' ? '/' : '/mini-homes'} />
       <nav className={menuOpen ? 'nav-links nav-links-open' : 'nav-links'} aria-label="Primary">
         {links.map(({ label, href, dropdown }) => (
           <a key={label} href={href}>

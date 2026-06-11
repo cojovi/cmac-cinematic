@@ -39,14 +39,14 @@ const models = [
   {
     title: 'Workforce Housing',
     body: 'Perfect for data center builds, construction crews, and remote site operations across Texas.',
-    image: '/Generated image 1.png',
+    image: '/minihomes-workforce.svg',
     link: 'Explore Workforce',
     Icon: Building2,
   },
   {
     title: 'Modular Construction',
     body: 'Steel Corten shell, spray-foam insulation, reinforced openings — engineered shelter from the ground up.',
-    image: '/hero-bg.jpg',
+    image: '/minihomes-modular.svg',
     link: 'Explore Modular',
     Icon: Factory,
   },
@@ -106,7 +106,7 @@ export default function MiniHomesPage() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    document.title = 'CMAC Mini Homes | Container-Built Living & Spaces'
+    document.title = 'CMAC Containers | Container-Built Living & Spaces'
   }, [])
 
   return (
@@ -119,7 +119,7 @@ export default function MiniHomesPage() {
           <h1>
             CMAC
             <br />
-            MINI HOMES
+            CONTAINERS
           </h1>
           <p className="hero-sub">
             Container-built homes and spaces. Texas-built quality.
@@ -181,7 +181,7 @@ export default function MiniHomesPage() {
           <h2>
             40ft Modular
             <br />
-            Mini Home
+            Container
           </h2>
           <ul>
             <li>40ft × 8ft × 8.5ft</li>
@@ -276,7 +276,7 @@ export default function MiniHomesPage() {
         <h2>
           Anatomy of a
           <br />
-          Mini-Home
+          Container
         </h2>
         <p className="anatomy-lead">Twelve engineered layers. One compact living solution. Six core systems below.</p>
         <div className="anatomy-grid">
@@ -396,8 +396,8 @@ export default function MiniHomesPage() {
 
       <footer id="footer" className="footer-panel">
         <div className="footer-top">
-          <Logo small brand="MINI HOMES" to="/mini-homes" />
-          <p>Turn-key shipping container mini homes — engineered for living, workforce housing, offices, and flexible spaces.</p>
+          <Logo small brand="CONTAINERS" to="/mini-homes" />
+          <p>Turn-key shipping container spaces — engineered for living, workforce housing, offices, and flexible spaces.</p>
           <nav>
             <h3>Quick Links</h3>
             <a href="#models">Models</a>
@@ -427,7 +427,7 @@ export default function MiniHomesPage() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© 2025 CMAC Mini Homes. All rights reserved.</span>
+          <span>© 2025 CMAC Containers. All rights reserved.</span>
           <span>
             <a href="#footer">Privacy Policy</a>
             <a href="#footer">Terms of Service</a>

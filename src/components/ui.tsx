@@ -13,7 +13,7 @@ export function Logo({
   return (
     <Link aria-label={`CMAC ${brand} home`} className={small ? 'logo logo-small' : 'logo'} to={to}>
       <img src="/cmac-logo-red.png" alt="CMAC" />
-      <strong>{brand}</strong>
+      <strong data-brand={brand}>{brand}</strong>
     </Link>
   )
 }

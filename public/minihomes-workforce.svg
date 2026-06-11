@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-label="Workforce housing container units at a dark construction site">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071017"/>
+      <stop offset="0.48" stop-color="#16222a"/>
+      <stop offset="1" stop-color="#020406"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#313b42"/>
+      <stop offset="0.54" stop-color="#151b20"/>
+      <stop offset="1" stop-color="#06090c"/>
+    </linearGradient>
+    <linearGradient id="container" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3a2418"/>
+      <stop offset="0.5" stop-color="#8a4b2d"/>
+      <stop offset="1" stop-color="#2b1b14"/>
+    </linearGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0v56" fill="none" stroke="#d9edf8" stroke-opacity=".075" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="760" fill="url(#sky)"/>
+  <rect width="1200" height="760" fill="url(#grid)" opacity=".65"/>
+  <path d="M0 592c164-50 303-72 476-44 214 35 387 18 724-84v296H0z" fill="#040609" opacity=".86"/>
+  <g opacity=".38" stroke="#ec2b2b" stroke-width="2" fill="none">
+    <path d="M60 592h250l95-69h365l78-58h230"/>
+    <path d="M286 592l76 86M769 523l96 98M1041 465l65 92"/>
+  </g>
+  <g transform="translate(98 300) skewY(-5)">
+    <rect x="0" y="0" width="330" height="150" rx="6" fill="url(#container)" stroke="#a86a45" stroke-opacity=".55"/>
+    <g stroke="#120b08" stroke-opacity=".6" stroke-width="2">
+      <path d="M38 0v150M76 0v150M114 0v150M152 0v150M190 0v150M228 0v150M266 0v150M304 0v150"/>
+    </g>
+    <rect x="244" y="34" width="54" height="80" rx="2" fill="#d9e7e8"/>
+    <rect x="40" y="42" width="92" height="35" rx="3" fill="#d8eef5" opacity=".82"/>
+    <rect x="-9" y="132" width="348" height="26" fill="#0d1215"/>
+  </g>
+  <g transform="translate(430 256) skewY(-5)">
+    <rect x="0" y="0" width="330" height="150" rx="6" fill="url(#steel)" stroke="#6e7d84" stroke-opacity=".46"/>
+    <g stroke="#06090b" stroke-opacity=".8" stroke-width="2">
+      <path d="M38 0v150M76 0v150M114 0v150M152 0v150M190 0v150M228 0v150M266 0v150M304 0v150"/>
+    </g>
+    <rect x="244" y="34" width="54" height="80" rx="2" fill="#dbe5e9"/>
+    <rect x="40" y="42" width="92" height="35" rx="3" fill="#d8eef5" opacity=".68"/>
+    <rect x="-9" y="132" width="348" height="26" fill="#0d1215"/>
+  </g>
+  <g transform="translate(760 214) skewY(-5)">
+    <rect x="0" y="0" width="330" height="150" rx="6" fill="url(#container)" stroke="#a86a45" stroke-opacity=".5"/>
+    <g stroke="#130b08" stroke-opacity=".62" stroke-width="2">
+      <path d="M38 0v150M76 0v150M114 0v150M152 0v150M190 0v150M228 0v150M266 0v150M304 0v150"/>
+    </g>
+    <rect x="244" y="34" width="54" height="80" rx="2" fill="#dbe5e9"/>
+    <rect x="40" y="42" width="92" height="35" rx="3" fill="#d8eef5" opacity=".72"/>
+    <rect x="-9" y="132" width="348" height="26" fill="#0d1215"/>
+  </g>
+  <g filter="url(#softGlow)">
+    <circle cx="218" cy="498" r="5" fill="#ff2f2f"/>
+    <circle cx="550" cy="452" r="5" fill="#ff2f2f"/>
+    <circle cx="880" cy="414" r="5" fill="#ff2f2f"/>
+    <path d="M184 528h756" stroke="#ff2f2f" stroke-opacity=".28" stroke-width="5"/>
+  </g>
+  <rect width="1200" height="760" fill="url(#sky)" opacity=".1"/>
+  <rect width="1200" height="760" fill="#020406" opacity=".2"/>
+</svg>

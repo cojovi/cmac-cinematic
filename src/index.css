@@ -135,6 +135,11 @@ button {
   margin-top: 1px;
 }
 
+.logo strong[data-brand="CONTAINERS"] {
+  font-size: clamp(10px, 0.78vw, 15px);
+  letter-spacing: 0.1em;
+}
+
 .logo-small {
   width: clamp(116px, 10vw, 180px);
 }
@@ -1371,6 +1376,19 @@ button {
   background: #020406;
 }
 
+.hero-minihomes .hero-copy {
+  width: clamp(360px, 29vw, 560px);
+}
+
+.hero-minihomes .hero-copy h1 {
+  font-size: clamp(48px, 4.7vw, 90px);
+  line-height: 0.96;
+}
+
+.hero-minihomes .hero-body {
+  width: clamp(285px, 24vw, 455px);
+}
+
 .minihomes-hero-bg {
   position: absolute;
   inset: 0;
@@ -1391,17 +1409,43 @@ button {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(90deg, rgba(9, 14, 18, 0.96) 0%, rgba(9, 14, 18, 0.64) 26%, rgba(9, 14, 18, 0.02) 52%, rgba(9, 14, 18, 0.52) 100%),
-    radial-gradient(circle at 53% 51%, rgba(242, 41, 41, 0.16), transparent 34%),
-    url("/Generated image 1.png");
+    linear-gradient(90deg, rgba(9, 14, 18, 0.98) 0%, rgba(9, 14, 18, 0.78) 24%, rgba(9, 14, 18, 0.2) 48%, rgba(9, 14, 18, 0.38) 72%, rgba(9, 14, 18, 0.8) 100%),
+    radial-gradient(circle at 62% 50%, rgba(242, 41, 41, 0.18), transparent 32%),
+    url("/minihomes-hero.png");
   background-size: auto, auto, cover;
-  background-position: center, center, 68% center;
+  background-position: center, center, 56% center;
   background-repeat: no-repeat;
-  filter: saturate(1.12) contrast(1.05);
+  filter: saturate(1.18) contrast(1.08) brightness(0.86);
+  transform: scale(1.02);
+}
+
+.minihomes-flagship-panel {
+  height: clamp(246px, 18.2vw, 352px);
+}
+
+.minihomes-flagship-panel .states-copy {
+  width: clamp(255px, 22vw, 410px);
+}
+
+.minihomes-flagship-panel .states-copy h2 {
+  font-size: clamp(22px, 1.8vw, 35px);
+  line-height: 1.24;
+}
+
+.minihomes-flagship-panel .local-card {
+  z-index: 2;
 }
 
 .minihomes-service-grid {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.minihomes-service-grid .service-card img {
+  object-position: center;
+}
+
+.minihomes-service-grid .service-card:first-child img {
+  object-position: 58% center;
 }
 
 .anatomy-panel {
