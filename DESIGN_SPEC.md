@@ -3,7 +3,7 @@
 Reference source: `/Users/cojovi/Downloads/Generated image 1.png`
 Native reference size: `864 x 1821`
 Verification target: browser screenshot at `974px` viewport width, desktop composition scaled from the reference.
-
+-----
 ## Overall Layout
 
 - Single long desktop page, centered on a black canvas.
