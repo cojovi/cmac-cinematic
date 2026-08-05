@@ -1,27 +1,33 @@
 import { ArrowRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 export function Logo({
   small = false,
-  brand = 'ROOFING',
+  brand = 'CONTAINER HOMES',
   to = '/',
+  onNavigate,
 }: {
   small?: boolean
   brand?: string
   to?: string
+  onNavigate?: (path: string) => void
 }) {
   return (
-    <Link aria-label={`CMAC ${brand} home`} className={small ? 'logo logo-small' : 'logo'} to={to}>
+    <a
+      aria-label={`CMAC ${brand} home`}
+      className={small ? 'logo logo-small' : 'logo'}
+      href={to}
+      onClick={onNavigate ? (event) => { event.preventDefault(); onNavigate(to) } : undefined}
+    >
       <img src="/cmac-logo-red.png" alt="CMAC" />
       <strong data-brand={brand}>{brand}</strong>
-    </Link>
+    </a>
   )
 }
 
 export function RedButton({
   children,
   wide = false,
-  href = '#inspection',
+  href = '#consultation',
 }: {
   children: React.ReactNode
   wide?: boolean

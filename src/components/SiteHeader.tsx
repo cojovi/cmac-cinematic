@@ -1,68 +1,64 @@
-import { ChevronDown, Menu, Phone } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { LogIn, Menu, Phone, X } from 'lucide-react'
 import { Logo } from './ui'
 
 type SiteHeaderProps = {
-  variant: 'roofing' | 'minihomes'
   menuOpen: boolean
   onMenuToggle: () => void
+  onNavigate: () => void
+  onRouteNavigate: (path: string) => void
 }
 
-const roofingLinks = [
-  { label: 'Services', href: '#services', dropdown: true },
-  { label: 'Our Process', href: '#process' },
-  { label: 'About Us', href: '#footer' },
-  { label: 'Locations', href: '#states' },
-  { label: 'Resources', href: '#footer', dropdown: true },
-  { label: 'Careers', href: '#footer' },
-]
-
-const minihomesLinks = [
-  { label: 'Models', href: '#models', dropdown: true },
-  { label: 'Our Process', href: '#process' },
-  { label: 'About Us', href: '#footer' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'Resources', href: '#footer', dropdown: true },
+const navLinks = [
+  { label: 'Container Homes', href: '#home', current: true },
+  { label: 'Models', href: '#models' },
+  { label: 'Build Process', href: '#process' },
+  { label: 'Service Area', href: '#service-area' },
   { label: 'Contact', href: '#consultation' },
 ]
 
-export function SiteHeader({ variant, menuOpen, onMenuToggle }: SiteHeaderProps) {
-  const links = variant === 'roofing' ? roofingLinks : minihomesLinks
-  const phone = variant === 'roofing' ? '8332623222' : '8312623222'
-  const phoneDisplay = variant === 'roofing' ? '(833) 262-3222' : '(831) 262-3222'
-  const ctaHref = variant === 'roofing' ? '#inspection' : '#consultation'
-  const ctaLabel = variant === 'roofing' ? 'Request Inspection' : 'Request Consultation'
-
+export function SiteHeader({ menuOpen, onMenuToggle, onNavigate, onRouteNavigate }: SiteHeaderProps) {
   return (
     <header className="top-nav">
-      <Logo brand={variant === 'roofing' ? 'ROOFING' : 'CONTAINERS'} to={variant === 'roofing' ? '/' : '/mini-homes'} />
-      <nav className={menuOpen ? 'nav-links nav-links-open' : 'nav-links'} aria-label="Primary">
-        {links.map(({ label, href, dropdown }) => (
-          <a key={label} href={href}>
+      <div className="scroll-signal" aria-hidden="true" />
+      <Logo />
+      <nav id="primary-navigation" className={menuOpen ? 'nav-links nav-links-open' : 'nav-links'} aria-label="Primary">
+        {navLinks.map(({ label, href, current }) => (
+          <a key={label} href={href} aria-current={current ? 'page' : undefined} onClick={onNavigate}>
             {label}
-            {dropdown ? <ChevronDown size={10} /> : null}
           </a>
         ))}
-        {variant === 'roofing' ? (
-          <Link className="nav-route-link" to="/mini-homes">
-            Mini-Homes
-          </Link>
-        ) : (
-          <Link className="nav-route-link nav-route-link-active" to="/mini-homes">
-            Mini-Homes
-          </Link>
-        )}
+        <a
+          className="nav-login"
+          href="/login"
+          onClick={(event) => {
+            event.preventDefault()
+            onNavigate()
+            onRouteNavigate('/login')
+          }}
+        >
+          <LogIn size={15} aria-hidden="true" /> Login
+        </a>
+        <a className="mobile-nav-phone" href="tel:8312623222" onClick={onNavigate}>
+          <Phone size={15} aria-hidden="true" /> (831) 262-3222
+        </a>
       </nav>
       <div className="nav-actions">
-        <a className="phone-pill" href={`tel:${phone}`}>
-          <Phone size={12} /> {phoneDisplay}
+        <a className="phone-pill" href="tel:8312623222" aria-label="Call CMAC Container Homes at 831 262 3222">
+          <Phone size={14} aria-hidden="true" /> (831) 262-3222
         </a>
-        <a className="nav-request" href={ctaHref}>
-          {ctaLabel}
+        <a className="nav-request" href="#consultation">
+          Request a Quote
         </a>
       </div>
-      <button className="menu-button" aria-label="Toggle navigation" onClick={onMenuToggle}>
-        <Menu size={20} />
+      <button
+        className="menu-button"
+        type="button"
+        aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={menuOpen}
+        aria-controls="primary-navigation"
+        onClick={onMenuToggle}
+      >
+        {menuOpen ? <X size={21} aria-hidden="true" /> : <Menu size={21} aria-hidden="true" />}
       </button>
     </header>
   )

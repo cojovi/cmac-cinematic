@@ -1,220 +1,124 @@
-# CMAC Roofing Pixel Reconstruction Design Spec
+# CMAC Container Homes — Design & Implementation Spec
 
-Reference source: `/Users/cojovi/Downloads/Generated image 1.png`
-Native reference size: `864 x 1821`
-Verification target: browser screenshot at `974px` viewport width, desktop composition scaled from the reference.
------
-## Overall Layout
+This branch is the public marketing and prototype sales workspace for **CMAC Container Homes**. Roofing is intentionally outside its product and navigation scope.
 
-- Single long desktop page, centered on a black canvas.
-- Reference has a compact poster rhythm: outer black gutters, then glass sections stacked with 10-14px vertical gaps.
-- Main content width in the reference is roughly 790-820px inside an 864px image. At 974px verification width this becomes roughly 890-925px.
-- Background is ultra-dark charcoal/black with dim blueprint/grid texture behind the hero and subtle smoky gradients between sections.
-- All major sections are rounded dark glass panels with thin metallic borders, faint inner highlights, and soft red glows only around active CTAs or active process state.
-- Desktop first. Mobile can stack gracefully, but the screenshot source of truth is the desktop/tall composition.
+## Product Position
 
-## Section Breakdown
+- Texas-built container homes and modular spaces.
+- Primary audiences: residential buyers, workforce-housing operators, and commercial/custom-space clients.
+- Primary conversion: start a project consultation.
+- Secondary conversion: direct phone or email contact.
+- Internal prototype goal: let sales representatives assemble a customer-ready unit sale package.
 
-| # | Section | Layout + Key Elements |
-|---|---|---|
-| 1 | Header/Nav | Rounded glass bar inset from top/left/right. CMAC ROOFING wordmark at left, nav links across center, phone pill, red Request Inspection button at right. |
-| 2 | Hero | Left: giant two-line `CMAC ROOFING`, subtitle, body copy, two CTA buttons, trust badge row. Right/back: large roof/house render angled from upper center to lower right; inspection form card floats on far right. |
-| 3 | Service Area | Glass panel. Left heading `Proudly Serving 6 States`, two-column state list. Center red-highlighted map. Right small local-teams card. |
-| 4 | Services | Glass panel. Small label, headline, four equal image cards: Roofing, Gutters, Doors, Restoration. Each card has red outlined icon badge, dark image overlay, red link. |
-| 5 | Process | Glass panel. Left label/title. Right five-step horizontal timeline with thin track line, circular numbered nodes, first node active with red glow, icons and captions below. |
-| 6 | Credentials | Glass panel. Label/title and six compact logo cards: GAF, CertainTeed, IKO, Malarkey, Owens Corning, BBB. |
-| 7 | Press Logos | Glass panel. Left title block `Recognized for Excellence`, right row of publication logos. |
-| 8 | Reviews | Glass panel. Left title card, three review cards, small square carousel arrows at far left/right. Review cards use red stars, quote copy, circular avatar. |
-| 9 | Final CTA | Wide stormy image panel. Left headline `Let's Protect What Matters.`, paragraph. Right dark floating benefit strip with three icons, button row. |
-| 10 | Footer | Rounded glass footer. Logo, description, quick links, resources, contact, social circles, copyright/legal row. |
+## Routing
 
-## Header/Nav Structure
+- `/` is the canonical landing page.
+- `/login` is the employee/client role gateway.
+- `/employee-portal` is the demo sales-preparation workspace.
+- `/client-portal` is the client experience coming-soon page.
+- Legacy and unknown client-side paths normalize to `/` for backward compatibility.
+- A lightweight History API view router handles these four routes; landing-page sections still use native anchors.
 
-- Header top offset: about 12px native, centered width about 810px native.
-- Height: about 50px native.
-- Border radius: 8px.
-- Logo: red `CMAC`, white `ROOFING`, blocky sans.
-- Nav links: `Services`, `Our Process`, `About Us`, `Locations`, `Resources`, `Careers`.
-- Nav typography: very small, bold, white/gray, about 6-7px native; scaled to 8-9px at 974px.
-- Phone pill: dark translucent rounded rectangle with phone icon and `(833) 262-3222`.
-- Request button: red gradient rectangle, radius 9px, glow.
+## Page Structure
 
-## Hero Layout
+1. Floating navigation with the active **Container Homes** home state.
+2. Hero with the flagship lifestyle image, core positioning, quick specs, and consultation form.
+3. Flagship 40ft model feature using the dedicated three-quarter product image.
+4. Residential, workforce, and custom-space solution cards with embedded CMAC imagery.
+5. Eight-state service area with a geographically accurate highlighted U.S. map.
+6. Five-step container build process.
+7. Flagship specification ledger.
+8. Six-layer construction anatomy.
+9. Real-world use cases.
+10. Final project CTA and direct contact paths.
+11. Compact brand/contact footer.
 
-- Hero height from y ~68 to y ~465 native.
-- Left content starts x ~43 native, y ~105 native.
-- H1: `CMAC` and `ROOFING`, condensed/block uppercase, huge, white, slight shadow. Approx native 78px cap height, line-height ~0.82.
-- Subtitle: bold white, 13px native, three short lines.
-- Body: muted gray, 10px native, max width around 235px.
-- Buttons: red primary and dark outlined secondary, same y, 126px/104px native widths.
-- Hero visual: roofing house image fills center/right, dark edges blend into background, red roof accent visible.
-- Form card: right side, x ~638 native, y ~112 native, w ~198 native, h ~343 native. Dark translucent blur, radius 10px, 6 stacked inputs and red full-width button.
+## Portal Structure
 
-## Inspection Form Layout
+1. The public header exposes a dedicated **Login** tab on desktop and mobile.
+2. The login gateway separates employee and client entry paths and labels the environment as a prototype.
+3. Employee access accepts any non-empty email/password during testing and opens the sales workspace.
+4. The employee workflow has four stages: unit selection, customer/site details, document package, and final review.
+5. The review includes editable deposit and delivery assumptions, base pricing, customer data, and selected documents.
+6. Preview and email actions are simulations; neither generates a PDF, stores customer data, nor transmits email.
+7. The client route is a designed coming-soon page for future signatures, invoices, payments, and build updates.
 
-- Card background: rgba charcoal, frosted blur, bright top-left edge and darker bottom.
-- Title uppercase `REQUEST INSPECTION`; subtitle `Fast. Free. No obligation.`
-- Inputs: 166px native width, 31-33px height, 7px radius, semi-transparent charcoal, thin gray border, placeholder text gray.
-- Service select has chevron. Date field has calendar glyph.
-- Submit button: red gradient, 31px native height, radius 7px, strong red glow.
-- Fine print centered under button.
+### Proposed sales document bundle
 
-## Badge Row
+- Purchase Agreement
+- Invoice & Deposit Schedule
+- Configuration & Finish Schedule
+- Site Readiness & Delivery Checklist
+- Limited Warranty
+- Change Order Policy
+- Permit & Zoning Acknowledgment
+- Payment Instructions
+- Bill of Sale
 
-- Trust row at lower hero, x ~43 native, y ~404 native.
-- Single dark glass strip, height ~48px native, width ~482px native.
-- Four equal compact items separated by faint vertical lines.
-- Each item has 27px outlined red icon square and two lines of small text.
+All templates are placeholders until reviewed by legal counsel, accounting, insurance, and operations for every state served.
 
-## States/Map Section
+## Visual Direction
 
-- Panel x ~36, y ~474, w ~792, h ~193 native.
-- Uses `states-section.jpg` as center/right visual layer.
-- Left content overlays panel. Label red, title white.
-- State list red bullet dots; two columns.
-- Map labels `TX`, `OK`, `AR`, `TN`, `GA` are white over red states.
-- Right card: narrow glass card with red outline location/teams icon, white copy, red link.
+Premium industrial/editorial. The system combines cold charcoal steel, restrained red signal lighting, blueprint geometry, fine rules, and translucent metal/glass surfaces. Typography is deliberately split between:
 
-## Services Cards
+- `Pirulen` for brand/display moments.
+- `Outfit` for readable UI and body copy.
+- System monospace for section coordinates, counts, and technical labels.
 
-- Panel x ~36, y ~678, w ~792, h ~239 native.
-- Heading area inside panel, not separate page section.
-- Four cards, each ~184x162 native, 8px radius, 1px border.
-- Image fills card; text overlays bottom over black gradient.
-- Red icon badge top-left, outlined/glowing, 34px native.
-- Card copy is compact; links are red.
+The signature gesture is a **blueprint/coordinate language**: section indices, corner marks, technical grids, outlined headline type, and measured red signal accents. Red is reserved for active states and conversion paths.
 
-## Process Timeline
+## Core Tokens
 
-- Panel x ~36, y ~926, w ~792, h ~151 native.
-- Left title block width ~190px.
-- Timeline begins x ~243 native.
-- Thin horizontal line through number circles.
-- Five equal steps, active first node red with glow and a translucent red vertical panel behind first step.
-- Icons are outline white/red inside circular dark rings.
+- Canvas: `#030506`
+- Surface: `#0a0f12`
+- Raised surface: `#11181d`
+- Primary red: `#f22929`
+- Light red: `#ff6260`
+- Primary text: `#f4f6f7`
+- Muted text: `#aeb9c0`
+- Metallic border: `rgba(205, 224, 234, 0.16)`
+- Panel radius: `18px` desktop, `13px` mobile
 
-## Credentials Row
+## Interaction & Accessibility
 
-- Panel x ~36, y ~1089, w ~792, h ~159 native.
-- Heading at top-left.
-- Six cards in a row, each ~121x81 native, dark surface, radius 5-6px.
-- Logo text approximates brand colors and relative weight; do not replace order.
+- Semantic landmarks and one page-level `h1`.
+- A keyboard-visible skip link and focus rings on every interactive control.
+- Native, controlled input/select fields with explicit labels and appropriate mobile input modes.
+- Mobile navigation exposes `aria-expanded` and `aria-controls` state.
+- The portal stepper exposes current and completed states without relying on color alone.
+- Demo action feedback uses an `aria-live` status message and the package preview uses a labeled modal dialog.
+- Motion is limited to the hero image/copy/form entrance and is disabled by `prefers-reduced-motion`.
+- Hover effects do not shift surrounding layout.
+- Responsive targets: 375px, 768px, 1024px, and 1440px with no horizontal overflow.
 
-## Press Logo Row
+## Consultation Behavior
 
-- Panel x ~36, y ~1260, w ~792, h ~87 native.
-- Left block title `Recognized for Excellence`; right aligned row of five white logos.
-- Logos are large enough to be read but subdued, no card wrappers per logo.
+The current site has no form API. Submission validates all fields and opens a prefilled email to `info@cmaccontainers.com`; the UI explains that behavior instead of implying a silent backend submission. Replace `submitConsultation` when a production lead endpoint is available.
 
-## Reviews Section
+## Product Images
 
-- Panel x ~36, y ~1355, w ~792, h ~154 native.
-- Left title card: label and `Real Reviews. Real Results.`
-- Three review cards centered/right, each ~168x120 native.
-- Cards have 5 red stars, quote, avatar/name/location.
-- Carousel arrows are small rounded dark squares at left and right edge.
+- `public/minihomes-hero.png` — clean text-free container home photo (2048×876), used as the full-bleed landing hero.
+- `public/minihomes-flagship.png` — the same 40ft Duo unit at a low three-quarter night angle, used only in the flagship model section so the two major image moments remain distinct.
 
-## Final CTA
+Do not replace or cosmetically regenerate these two product images without explicit product approval. Current visual lock: dark horizontal wood siding, black metal frame, two black six-panel doors, high horizontal windows, red vertical corner LEDs, warm ground uplights, dual end-wall AC units, wet dark patio reflections, and a night setting.
 
-- Panel x ~36, y ~1520, w ~792, h ~187 native.
-- Background image storm/house/mountain fills panel with dark overlay.
-- Left title and paragraph placed over image.
-- Right floating glass strip: x ~389 native, y ~1544, w ~351, h ~124.
-- Three benefits separated by vertical rules, red outline icons, then red and dark phone buttons.
+The pre-black-door versions are preserved as `public/minihomes-hero-before-black-doors.png` and `public/minihomes-flagship-before-black-doors.png`.
 
-## Footer
+### Solution card imagery
 
-- Panel x ~36, y ~1718, w ~792, h ~103 native, rounded top/footer card.
-- Logo at left, short description, link columns, contact, social icons.
-- Bottom copyright and legal links separated by top border.
+- `public/solutions/turnkey-living.jpg` - finished sleeping/living interior.
+- `public/solutions/workforce-housing.jpg` - CMAC container production floor.
+- `public/solutions/custom-spaces.jpg` - completed wood-clad exterior.
 
-## Exact Color Palette
+These are web-optimized derivatives of the supplied CMAC marketing library. The cards use real images, legible gradient overlays, compact icon badges, and a restrained hover sheen.
 
-- Page black: `#020406`
-- Main dark: `#070b0f`
-- Panel dark: `#0c1217`
-- Panel lighter glass: `rgba(27, 35, 42, 0.72)`
-- Card dark: `rgba(15, 20, 25, 0.82)`
-- Input dark: `rgba(35, 45, 53, 0.58)`
-- White text: `#f7f8f8`
-- Muted text: `#b8c0c7`
-- Dim text: `#747f87`
-- Red primary: `#f22929`
-- Red deep: `#b81316`
-- Red glow: `rgba(242, 41, 41, 0.46)`
-- Border: `rgba(190, 209, 220, 0.18)`
-- Strong border: `rgba(230, 240, 246, 0.28)`
+## Service Area Map
 
-## Approximate Font Choices
+The map uses U.S. Census geography from `us-atlas`, rendered with `topojson-client` and `d3-geo`. Exactly eight states are active: Texas, Louisiana, Florida, Tennessee, Arkansas, Ohio, Oklahoma, and California. The state list remains the primary readable reference on small screens; the SVG supplies the geographic overview and labeled highlights.
 
-- Hero/logo/headlines: `Arial Black`, `Impact`, `Anton`-like condensed fallback. Use CSS `font-stretch` fallback where possible, heavy weight, tight line-height.
-- Body/UI: `Inter`, `Arial`, system sans.
-- Press logos: serif for Forbes/Entrepreneur/Inc approximations, bold sans for contractor/yahoo.
+## Verification
 
-## Border Radius System
-
-- Header/panels/footer: 8-10px native, scaled to 10-12px.
-- Cards: 6-8px.
-- Inputs: 7px.
-- Buttons: 7-9px, not fully pill except phone/header secondary pills.
-- Icon badges: 7-9px.
-
-## Shadow/Glow System
-
-- Global panel: inset white top highlight, dark outer shadow.
-- Red buttons: red outer glow and subtle inset highlight.
-- Active process node: red halo 0 0 18-24px.
-- Cards: low black shadow, no bright lift.
-- Background: dim blueprint/grid and radial red haze behind active areas.
-
-## Card Background Styles
-
-- All cards use semi-transparent charcoal with blur and a thin metallic border.
-- Image cards use dark image with black bottom gradient and slight red highlight around icon.
-- No bright clean surfaces, no large soft modern cards.
-
-## Button Styles
-
-- Primary red: linear gradient from bright red top-left to deeper red bottom, white bold compact text, small arrow icon, 7-9px radius, glow.
-- Secondary dark: transparent charcoal fill, gray border, white text.
-- Phone: dark translucent fill, white text, phone icon, rounded.
-
-## Spacing Rules
-
-- Outer page gutter at 974px: roughly 22-42px depending section.
-- Section gaps: 10-14px, not large landing-page spacing.
-- Inside panels: 20-26px.
-- Cards gaps: 8-12px.
-- Typography is dense; avoid extra leading and large margins.
-
-## Responsive Notes
-
-- Desktop reference is the source of truth. Build desktop first at 974px verification width.
-- Below ~820px, stack hero/form/cards to avoid overflow while retaining the same dark/red visual system. Mobile is secondary and should not drive desktop spacing.
-
-## Session: Mini-Homes Branch (2025-06-11)
-
-### Routing
-- Added `react-router-dom` with `/` (Roofing) and `/mini-homes` (Mini-Homes).
-- Shared header component switches nav/CTA copy by variant.
-
-### Header
-- Roofing nav now includes **Mini-Homes** linking to `/mini-homes`.
-- Mini-Homes nav uses mockup labels: Models, Our Process, About Us, Gallery, Resources, Contact.
-- Mini-Homes phone/CTA: `(831) 262-3222`, Request Consultation.
-
-### Mini-Homes Page Structure
-Mirrors roofing section rhythm with container-specific content sourced from `minihomes-coming-soon.vercel.app`:
-1. Hero — full-bleed `minihomes-hero.png`, consultation form, trust row (Texas Built, Flexible Layouts, Turnkey Quality, Delivery Available).
-2. Flagship Model — 40ft modular specs panel (states-panel pattern).
-3. Why CMAC — 3 service cards (Turn-Key Delivery, Workforce Housing, Modular Construction).
-4. Process — 5-step build timeline.
-5. Engineered Specs — 6 credential-style stat cards.
-6. Anatomy — 6-layer build breakdown grid.
-7. Coming Soon strip — 5-day build cycle + `cmaccontainers.com`.
-8. Early Inquiries — review cards.
-9. Launch CTA — waitlist CTA with mini-homes hero background.
-10. Footer — Mini-Homes branding and contact.
-
-### Assets
-- `public/minihomes-hero.png` — clean text-free container home photo (1024×438). Full-bleed hero background with left/right readability gradients. Never use a UI mockup export that contains baked-in headline or form artwork.
+- `npm run lint`
+- `npm run build`
+- Browser checks at 375, 768, 1024, and 1440px.
+- Verify mobile menu, login navigation, browser history, all employee workflow stages, demo feedback, legacy path normalization, no broken images, correct metadata, no runtime errors, and zero horizontal overflow.
