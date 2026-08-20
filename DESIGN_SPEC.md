@@ -42,6 +42,9 @@ This branch is the public marketing and prototype sales workspace for **CMAC Con
 5. The review includes editable deposit and delivery assumptions, base pricing, customer data, and selected documents.
 6. Preview and email actions are simulations; neither generates a PDF, stores customer data, nor transmits email.
 7. The client route is a designed coming-soon page for future signatures, invoices, payments, and build updates.
+8. The employee sidebar and compact mobile tab rail expose five working destinations: Overview, New Sale, Inventory, Documents, and Customers.
+9. Overview presents a mock pipeline and actionable follow-ups; Inventory supports availability filters and unit-to-sale handoff; Documents supports search, category filters, previews, and package handoff; Customers supports search, record details, and customer-to-sale handoff.
+10. Portal records, metrics, activity, availability, document versions, and customer values are intentionally fictional prototype data.
 
 ### Proposed sales document bundle
 
@@ -78,6 +81,15 @@ The signature gesture is a **blueprint/coordinate language**: section indices, c
 - Muted text: `#aeb9c0`
 - Metallic border: `rgba(205, 224, 234, 0.16)`
 - Panel radius: `18px` desktop, `13px` mobile
+
+## Color Modes
+
+- Dark mode remains the first-visit default and preserves the original cinematic CMAC presentation.
+- Light mode uses architectural white, pale steel, graphite text, technical grid lines, and the same CMAC signal red.
+- The hero, flagship model, and final CTA remain dark image-led anchor sections in both modes so photography and conversion contrast stay intentional.
+- A machined two-position **Light / Dark** control appears in the public navigation, access headers, and employee portal. Mobile headers use the same control in a compact icon treatment; the public mobile menu exposes the fully labeled version.
+- An explicit choice is stored under `cmac-color-theme`. System color preference is intentionally ignored so new visitors always begin in dark mode.
+- The HTML theme attribute is applied before React loads to prevent a flash of the wrong color mode on returning visits.
 
 ## Interaction & Accessibility
 

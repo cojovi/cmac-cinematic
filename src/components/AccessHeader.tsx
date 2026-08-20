@@ -1,5 +1,6 @@
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
 import { Logo } from './ui'
+import { ThemeToggle } from './ThemeToggle'
 
 type AccessHeaderProps = {
   onNavigate: (path: string) => void
@@ -18,6 +19,7 @@ export function AccessHeader({
     <header className={compact ? 'access-header access-header-compact' : 'access-header'}>
       <Logo onNavigate={onNavigate} />
       <div className="access-header-actions">
+        <ThemeToggle />
         <span className="demo-chip"><ShieldCheck size={14} aria-hidden="true" /> Demo environment</span>
         <a
           className="access-back"

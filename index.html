@@ -5,13 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#050709" />
+    <script>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('cmac-color-theme') === 'light' ? 'light' : 'dark'
+      } catch {
+        document.documentElement.dataset.theme = 'dark'
+      }
+    </script>
     <meta name="description" content="Texas-built container homes and modular spaces by CMAC. Explore turn-key living, workforce housing, custom layouts, and nationwide delivery support." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <title>CMAC Container Homes | Texas-Built Modular Living</title>
   </head>
-  <body class="bg-[#090a0f] text-[#ffffff] antialiased min-h-screen">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -6,7 +6,6 @@ import {
   Building2,
   Check,
   CheckCircle2,
-  ChevronRight,
   ClipboardList,
   Clock3,
   Download,
@@ -14,34 +13,26 @@ import {
   FileSignature,
   Files,
   Home,
-  LayoutDashboard,
   LogOut,
   Mail,
   MapPin,
-  PackageCheck,
-  Plus,
   ReceiptText,
   Send,
   ShieldCheck,
   UserRound,
-  UsersRound,
   WalletCards,
   X,
-  type LucideIcon,
 } from 'lucide-react'
 import { Logo } from '../components/ui'
-
-type Unit = {
-  id: string
-  name: string
-  subtitle: string
-  status: string
-  leadTime: string
-  image: string
-  imageAlt: string
-  price: number
-  Icon: LucideIcon
-}
+import { ThemeToggle } from '../components/ThemeToggle'
+import {
+  CustomersView,
+  DocumentsView,
+  InventoryView,
+  OverviewView,
+  PortalNavigation,
+} from '../components/portal/PortalViews'
+import { portalSectionMeta, type PortalCustomer, type PortalDocument, type PortalSection, type PortalUnit } from '../components/portal/portal-data'
 
 type Customer = {
   name: string
@@ -54,15 +45,7 @@ type Customer = {
   notes: string
 }
 
-type DocumentItem = {
-  id: string
-  title: string
-  detail: string
-  group: 'Required' | 'Recommended' | 'Closing'
-  selected: boolean
-}
-
-const units: Unit[] = [
+const units: PortalUnit[] = [
   {
     id: 'CH-104',
     name: 'CMAC Living 40',
@@ -109,14 +92,13 @@ const initialCustomer: Customer = {
   notes: '',
 }
 
-const initialDocuments: DocumentItem[] = [
+const initialDocuments: PortalDocument[] = [
   { id: 'agreement', title: 'Purchase Agreement', detail: 'Unit, parties, price, terms, and signatures.', group: 'Required', selected: true },
   { id: 'invoice', title: 'Invoice & Deposit Schedule', detail: 'Deposit, milestone payments, and balance due.', group: 'Required', selected: true },
   { id: 'configuration', title: 'Configuration & Finish Schedule', detail: 'The exact layout, fixtures, finishes, and options.', group: 'Required', selected: true },
   { id: 'site', title: 'Site Readiness & Delivery Checklist', detail: 'Access, foundation, utilities, crane, and placement.', group: 'Recommended', selected: true },
   { id: 'warranty', title: 'Limited Warranty', detail: 'Coverage, exclusions, care, and claim process.', group: 'Recommended', selected: true },
   { id: 'changes', title: 'Change Order Policy', detail: 'How post-approval changes affect price and schedule.', group: 'Recommended', selected: true },
-  { id: 'permit', title: 'Permit & Zoning Acknowledgment', detail: 'Clarifies buyer and jurisdiction responsibilities.', group: 'Recommended', selected: true },
   { id: 'payment', title: 'Payment Instructions', detail: 'Approved payment channels and fraud safeguards.', group: 'Closing', selected: true },
   { id: 'bill', title: 'Bill of Sale', detail: 'Prepared now, issued once final payment clears.', group: 'Closing', selected: false },
 ]
@@ -131,6 +113,7 @@ const steps = [
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 
 export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const [activeSection, setActiveSection] = useState<PortalSection>('sale')
   const [step, setStep] = useState(1)
   const [selectedUnitId, setSelectedUnitId] = useState(units[0].id)
   const [customer, setCustomer] = useState(initialCustomer)
@@ -138,11 +121,13 @@ export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: 
   const [deliveryEstimate, setDeliveryEstimate] = useState('TBD after site review')
   const [depositPercent, setDepositPercent] = useState(10)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [libraryPreview, setLibraryPreview] = useState<PortalDocument | null>(null)
   const [sent, setSent] = useState(false)
   const selectedUnit = units.find((unit) => unit.id === selectedUnitId) ?? units[0]
   const selectedDocumentCount = documents.filter((document) => document.selected).length
   const deposit = selectedUnit.price * (depositPercent / 100)
   const customerReady = Boolean(customer.name && customer.email && customer.phone && customer.projectAddress)
+  const activeMeta = portalSectionMeta[activeSection]
 
   const completion = useMemo(() => {
     const checks = [Boolean(selectedUnit), customerReady, selectedDocumentCount >= 3, step === 4]
@@ -179,6 +164,40 @@ export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: 
     setPreviewOpen(false)
   }
 
+  function changeSection(section: PortalSection) {
+    setActiveSection(section)
+    setSent(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function startSaleWithUnit(unitId: string) {
+    setSelectedUnitId(unitId)
+    setStep(2)
+    changeSection('sale')
+  }
+
+  function prepareCustomerSale(record?: PortalCustomer) {
+    setCustomer(record ? {
+      name: record.name,
+      email: record.email,
+      phone: record.phone,
+      company: record.company,
+      projectAddress: `${record.location} — exact address pending`,
+      billingAddress: '',
+      deliveryTarget: '',
+      notes: `Mock CRM record ${record.id}. Last contact: ${record.lastContact}.`,
+    } : initialCustomer)
+    setStep(2)
+    changeSection('sale')
+  }
+
+  function addLibraryDocumentToSale(document: PortalDocument) {
+    setDocuments((current) => current.map((item) => item.id === document.id ? { ...item, selected: true } : item))
+    setLibraryPreview(null)
+    setStep(3)
+    changeSection('sale')
+  }
+
   return (
     <div className="employee-portal">
       <a className="skip-link" href="#portal-main">Skip to workspace</a>
@@ -188,13 +207,7 @@ export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: 
           <div className="portal-avatar">JD</div>
           <div><strong>Jordan Davis</strong><span>Sales representative</span></div>
         </div>
-        <nav aria-label="Employee portal">
-          <button type="button"><LayoutDashboard size={18} aria-hidden="true" /> Overview</button>
-          <button className="active" type="button"><Plus size={18} aria-hidden="true" /> New sale <ChevronRight size={15} aria-hidden="true" /></button>
-          <button type="button"><PackageCheck size={18} aria-hidden="true" /> Inventory</button>
-          <button type="button"><Files size={18} aria-hidden="true" /> Documents</button>
-          <button type="button"><UsersRound size={18} aria-hidden="true" /> Customers</button>
-        </nav>
+        <PortalNavigation active={activeSection} onChange={changeSection} />
         <div className="portal-sidebar-bottom">
           <div className="portal-env"><span /> Prototype environment<strong>Nothing is sent or saved</strong></div>
           <button type="button" onClick={() => onNavigate('/login')}><LogOut size={17} aria-hidden="true" /> Exit portal</button>
@@ -203,16 +216,20 @@ export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: 
 
       <div className="portal-workspace">
         <header className="portal-topbar">
-          <div><span className="portal-breadcrumb">SALES / NEW TRANSACTION</span><h1>Prepare a sale</h1></div>
+          <div><span className="portal-breadcrumb">{activeMeta.breadcrumb}</span><h1>{activeMeta.title}</h1></div>
           <div className="portal-top-actions">
-            <span className="draft-status"><span /> Draft / not saved</span>
+            <ThemeToggle />
+            <span className="draft-status"><span /> {activeSection === 'sale' ? 'Draft / not saved' : 'Prototype data'}</span>
             <button className="portal-exit-mobile" type="button" onClick={() => onNavigate('/login')}><LogOut size={17} /> Exit</button>
           </div>
         </header>
 
         <main id="portal-main" className="portal-main">
+          <PortalNavigation active={activeSection} onChange={changeSection} mobile />
           <div className="portal-demo-banner"><ShieldCheck size={17} aria-hidden="true" /><p><strong>Demo mode:</strong> use fictional customer details only. Authentication, storage, signatures, invoices, and email delivery are not connected.</p></div>
 
+          {activeSection === 'sale' ? (
+            <>
           <ol className="portal-stepper" aria-label="Sale preparation progress">
             {steps.map((item) => (
               <li key={item.number} className={step === item.number ? 'current' : step > item.number ? 'complete' : ''}>
@@ -318,6 +335,16 @@ export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: 
               <div className="summary-integrity"><ShieldCheck size={17} /><p>Final price and terms require manager approval before sending from the production system.</p></div>
             </aside>
           </div>
+            </>
+          ) : activeSection === 'overview' ? (
+            <OverviewView onChange={changeSection} />
+          ) : activeSection === 'inventory' ? (
+            <InventoryView units={units} onStartSale={startSaleWithUnit} />
+          ) : activeSection === 'documents' ? (
+            <DocumentsView documents={documents} onPreview={setLibraryPreview} />
+          ) : (
+            <CustomersView onPrepareSale={prepareCustomerSale} />
+          )}
         </main>
       </div>
 
@@ -333,6 +360,30 @@ export default function EmployeePortalPage({ onNavigate }: { onNavigate: (path: 
             <div className="modal-icon"><FileSignature size={28} /></div><span>DEMO DOCUMENT PREVIEW</span><h2 id="preview-title">{selectedDocumentCount}-document customer package</h2><p>This preview represents the future generated PDF and e-signature envelope for <strong>{customer.name || 'Demo Customer'}</strong>.</p>
             <div className="modal-summary"><span>{selectedUnit.id} / {selectedUnit.name}</span><strong>{money.format(selectedUnit.price)}</strong></div>
             <div className="modal-actions"><button className="portal-secondary-button" type="button" onClick={() => setPreviewOpen(false)}>Keep editing</button><button className="portal-primary-button" type="button" onClick={simulateSend}><Mail size={16} /> Simulate email</button></div>
+          </section>
+        </div>
+      )}
+
+      {libraryPreview && (
+        <div
+          className="portal-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => event.target === event.currentTarget && setLibraryPreview(null)}
+          onKeyDown={(event) => event.key === 'Escape' && setLibraryPreview(null)}
+        >
+          <section className="portal-modal template-preview-modal" role="dialog" aria-modal="true" aria-labelledby="template-preview-title">
+            <button className="modal-close" type="button" onClick={() => setLibraryPreview(null)} aria-label="Close template preview" autoFocus><X size={18} /></button>
+            <div className="modal-icon"><FileCheck2 size={28} /></div>
+            <span>CONTROLLED TEMPLATE / DEMO</span>
+            <h2 id="template-preview-title">{libraryPreview.title}</h2>
+            <p>{libraryPreview.detail}</p>
+            <div className="template-preview-sheet" aria-label="Mock document contents">
+              <div><span>CMAC CONTAINER HOMES</span><b>{libraryPreview.title}</b></div>
+              <p>This preview represents the structure of the future production document. Customer, unit, pricing, and jurisdiction fields will be generated from the completed sale record.</p>
+              <span /><span /><span />
+              <small>Prototype template — not legal or financial advice</small>
+            </div>
+            <div className="modal-actions"><button className="portal-secondary-button" type="button" onClick={() => setLibraryPreview(null)}>Close preview</button><button className="portal-primary-button" type="button" onClick={() => addLibraryDocumentToSale(libraryPreview)}>Add to new sale <ArrowRight size={15} /></button></div>
           </section>
         </div>
       )}
