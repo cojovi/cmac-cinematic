@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(employeeError.message)
       setEmployee(null)
     } else if (!data || !['admin', 'sales_rep'].includes(String(data.role))) {
-      setError('Your Google account is not on the active CMAC employee allowlist.')
+      setError('Your CMAC employee account is not active.')
       setEmployee(null)
     } else {
       setError(null)

@@ -15,7 +15,7 @@ export default function AuthCallbackPage() {
       <div className="route-guard-icon">{error ? <ShieldCheck /> : <LoaderCircle className="spin" />}</div>
       <span>GOOGLE WORKSPACE / CALLBACK</span>
       <h1>{error ? 'Sign-in could not be completed' : 'Securing your session'}</h1>
-      <p>{error ?? 'Linking your Google identity to the CMAC employee allowlist.'}</p>
+      <p>{error ?? 'Linking your verified CMAC Workspace identity to the sales portal.'}</p>
       {error ? <a className="portal-secondary-button" href="/login">Try sign-in again</a> : null}
     </main>
   )

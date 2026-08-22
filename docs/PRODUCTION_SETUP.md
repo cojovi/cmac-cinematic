@@ -8,7 +8,7 @@ The application is production-capable but intentionally reports external service
 | --- | --- | --- |
 | Dedicated CRM Supabase | Deployed | `cmac_crm` (`gxiluyvhrrctslnhjkmc`) has the CRM schema, RLS, private Storage buckets, legacy-contact archive, and database hardening migrations. |
 | Google service account | Locally validated | JSON and `.env` identity, client ID, and private key match; the key parses successfully. |
-| Google employee sign-in | Provider and allowlist hook active; first admin pending | The Web OAuth client, production/local callbacks, and `private.before_user_created_hook` are active. Bootstrap the first real CMAC administrator before enabling protected signups. |
+| Google employee sign-in | Provider and domain gate active | The Web OAuth client, production/local callbacks, and `private.before_user_created_hook` are active. New verified CMAC Workspace users are provisioned as sales representatives; Cody Viveiros is the bootstrapped administrator. |
 | Bolt-Data aggregate | Validated | The configured project and key return HTTP 200 with the expected aggregate schema. |
 | Lead intake hashing | Active | Uses the built-in server-only service-role secret as its HMAC salt; an optional dedicated `LEAD_RATE_LIMIT_SECRET` can be supplied for independent rotation. |
 | CRM Edge Functions | Partially deployed | `submit-lead`, `admin-manage-employee`, `complete-unit-sale`, and `send-marketing-email` are active. Provider-dependent calls report not configured until their secrets are supplied. |
@@ -25,14 +25,14 @@ The application is production-capable but intentionally reports external service
 
 ### First administrator bootstrap
 
-Run this once **after CMAC confirms the real first administrator email and before enabling signups/the Before User Created hook**, replacing the example identity:
+The first administrator was bootstrapped manually as Cody Viveiros (`codyv@cmaccontainers.com`). For a new environment, run this once before enabling signups, replacing the example identity:
 
 ```sql
 insert into public.employees (email, first_name, last_name, display_name, role)
 values ('first.admin@cmaccontainers.com', 'First', 'Admin', 'First Admin', 'admin');
 ```
 
-Do not hardcode a real employee in a migration. After the administrator signs in with the same Google email, the `auth.users` trigger links `auth_user_id` automatically.
+Do not hardcode a real employee in a migration. After the administrator signs in with the same Google email, the `auth.users` trigger links `auth_user_id` automatically and preserves the administrator role.
 
 ## 2. Google Workspace sign-in
 
@@ -57,12 +57,12 @@ The checked-in application uses two separate Google integrations:
    - `https://cmac-cinematic.vercel.app/auth/callback`
    - `http://localhost:5173/auth/callback`
 
-6. Bootstrap the first administrator allowlist row.
-7. The Before User Created hook is configured at `pg-functions://postgres/private/before_user_created_hook`. After bootstrapping the first administrator, enable signups; the hook admits only active, allowlisted `@cmaccontainers.com` Google identities.
+6. Bootstrap the first administrator row before opening domain signup.
+7. The Before User Created hook is configured at `pg-functions://postgres/private/before_user_created_hook`. It admits only Google identities in the exact `cmaccontainers.com` domain. A first-time domain user is automatically created as an active `sales_rep`; Google profile metadata cannot set roles or active status. Existing rows preserve their administrator-managed role and status, and an explicitly deactivated employee remains blocked.
 8. Request identity only: OpenID, email, and profile.
-9. Confirm an unlisted CMAC account and every non-CMAC account are rejected.
+9. Confirm a new CMAC account is provisioned as `sales_rep`, a deactivated CMAC account is rejected, and every non-CMAC or non-Google account is rejected.
 
-Live sessions query the active `employees` row. Deactivation therefore removes business-data access on the next check without waiting for OAuth token expiry.
+Live sessions query the active `employees` row. Deactivation therefore removes business-data access on the next check without waiting for OAuth token expiry. New users cannot promote themselves; only an authenticated administrator can intentionally manage employee roles through server-controlled workflows.
 
 ## 3. Bolt-Data aggregate inventory
 
@@ -112,7 +112,7 @@ The function hashes network/email rate-limit identifiers with a server-only HMAC
 
 ## 7. Vercel deployment
 
-`vercel.json` preserves `/api/*` functions and rewrites all other direct paths to Vite's `index.html`. Vercel Authentication must remain off for this public site; employee access is enforced by Supabase Auth, the employee allowlist, and RLS. Before promotion, verify every route by direct URL and browser refresh, then test `/api/inventory` with valid, invalid, and deactivated employee sessions.
+`vercel.json` preserves `/api/*` functions and rewrites all other direct paths to Vite's `index.html`. Vercel Authentication must remain off for this public site; employee access is enforced by Supabase Auth, the exact Workspace domain gate, active employee status, and RLS. Before promotion, verify every route by direct URL and browser refresh, then test `/api/inventory` with valid, invalid, and deactivated employee sessions.
 
 ## 8. Local verification
 

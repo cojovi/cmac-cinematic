@@ -27,7 +27,7 @@ export default function LoginPage() {
           </div>
           <div className="access-system-note">
             <ShieldCheck size={18} aria-hidden="true" />
-            <div><strong>Workspace protected</strong><span>Google identity, the CMAC domain, and the live employee allowlist are checked at every sign-in.</span></div>
+            <div><strong>Workspace protected</strong><span>Verified CMAC Google Workspace identity and active employee status are checked at every sign-in.</span></div>
           </div>
         </section>
 

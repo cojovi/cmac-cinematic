@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(42);
 
 select has_table('public', 'employees', 'employees table exists');
 select has_table('public', 'contacts', 'contacts table exists');
@@ -13,17 +13,69 @@ select ok(not has_function_privilege('authenticated', 'public.admin_manage_emplo
 select ok(not has_function_privilege('anon', 'public.submit_public_lead(text,text,text,citext,text,text,text,text,text,text)', 'EXECUTE'), 'anonymous clients cannot bypass the lead Edge Function');
 select ok(not has_function_privilege('authenticated', 'public.complete_deal_sale(uuid,uuid,text)', 'EXECUTE'), 'browser users cannot bypass the sale-completion Edge Function');
 
+insert into public.employees (id, email, first_name, last_name, display_name, role, rep_code)
+values
+  ('20000000-0000-0000-0000-000000000001', 'admin@cmaccontainers.com', 'Ada', 'Admin', 'Ada Admin', 'admin', 'CMAC-T001'),
+  ('20000000-0000-0000-0000-000000000002', 'repa@cmaccontainers.com', 'Riley', 'Rep', 'Riley Rep', 'sales_rep', 'CMAC-T002'),
+  ('20000000-0000-0000-0000-000000000003', 'repb@cmaccontainers.com', 'Reese', 'Rep', 'Reese Rep', 'sales_rep', 'CMAC-T003');
+
+select is(
+  private.before_user_created_hook('{"user":{"email":"new.rep@cmaccontainers.com","app_metadata":{"provider":"google"}}}'::jsonb),
+  '{}'::jsonb,
+  'an unregistered CMAC Google identity is admitted by the signup hook'
+);
+select is(
+  private.before_user_created_hook('{"user":{"email":"rep@cmaccontainers.com.attacker.test","app_metadata":{"provider":"google"}}}'::jsonb)->'error'->>'http_code',
+  '403',
+  'a lookalike email domain is rejected'
+);
+select is(
+  private.before_user_created_hook('{"user":{"email":"rep@cmaccontainers.com","app_metadata":{"provider":"email"}}}'::jsonb)->'error'->>'http_code',
+  '403',
+  'a non-Google signup is rejected'
+);
+
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
   ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'admin@cmaccontainers.com', '', now(), '{"provider":"google","providers":["google"]}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'repa@cmaccontainers.com', '', now(), '{"provider":"google","providers":["google"]}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'repb@cmaccontainers.com', '', now(), '{"provider":"google","providers":["google"]}', '{}', now(), now());
 
-insert into public.employees (id, auth_user_id, email, first_name, last_name, display_name, role, rep_code)
-values
-  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'admin@cmaccontainers.com', 'Ada', 'Admin', 'Ada Admin', 'admin', 'CMAC-T001'),
-  ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'repa@cmaccontainers.com', 'Riley', 'Rep', 'Riley Rep', 'sales_rep', 'CMAC-T002'),
-  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000003', 'repb@cmaccontainers.com', 'Reese', 'Rep', 'Reese Rep', 'sales_rep', 'CMAC-T003');
+select is((select role from public.employees where email = 'admin@cmaccontainers.com'), 'admin', 'Google linking preserves an existing administrator role');
+select is((select auth_user_id from public.employees where email = 'admin@cmaccontainers.com'), '10000000-0000-0000-0000-000000000001'::uuid, 'Google linking attaches the existing administrator record');
+
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  '10000000-0000-0000-0000-000000000004',
+  'authenticated',
+  'authenticated',
+  'new.rep@cmaccontainers.com',
+  '',
+  now(),
+  '{"provider":"google","providers":["google"]}',
+  '{"given_name":"Nova","family_name":"Rep","full_name":"Nova Rep","role":"admin"}',
+  now(),
+  now()
+);
+select is((select role from public.employees where email = 'new.rep@cmaccontainers.com'), 'sales_rep', 'new domain users are always provisioned as sales reps');
+select is((select display_name from public.employees where email = 'new.rep@cmaccontainers.com'), 'Nova Rep', 'Google profile data may populate non-authoritative display fields');
+select is((select auth_user_id from public.employees where email = 'new.rep@cmaccontainers.com'), '10000000-0000-0000-0000-000000000004'::uuid, 'a new domain user is linked to the provisioned employee');
+
+delete from public.employees where email = 'new.rep@cmaccontainers.com';
+delete from auth.users where id = '10000000-0000-0000-0000-000000000004';
+
+insert into public.employees (id, email, first_name, last_name, display_name, role, rep_code, active)
+values ('20000000-0000-0000-0000-000000000004', 'disabled@cmaccontainers.com', 'Disabled', 'Rep', 'Disabled Rep', 'sales_rep', 'CMAC-T004', false);
+select is(
+  private.before_user_created_hook('{"user":{"email":"disabled@cmaccontainers.com","app_metadata":{"provider":"google"}}}'::jsonb)->'error'->>'http_code',
+  '403',
+  'an explicitly deactivated employee is rejected by the signup hook'
+);
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'disabled@cmaccontainers.com', '', now(), '{"provider":"google","providers":["google"]}', '{"role":"admin"}', now(), now());
+select is((select active from public.employees where email = 'disabled@cmaccontainers.com'), false, 'auth linking cannot reactivate a disabled employee');
+select is((select role from public.employees where email = 'disabled@cmaccontainers.com'), 'sales_rep', 'auth linking cannot change a managed employee role');
 
 insert into public.contacts (id, first_name, display_name, email, assigned_employee_id, created_by)
 values

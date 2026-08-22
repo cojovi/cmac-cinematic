@@ -13,7 +13,7 @@ Deno.serve(async (request) => {
     if (!['create', 'activate', 'deactivate'].includes(input.action ?? '')) return json(request, { error: 'Unsupported employee action.' }, 422)
     if (input.action === 'create') {
       const email = input.employee?.email?.trim().toLowerCase() ?? ''
-      if (!email.endsWith('@cmaccontainers.com') || !['admin', 'sales_rep'].includes(input.employee?.role ?? '') || !input.employee?.first_name?.trim() || !input.employee?.last_name?.trim()) return json(request, { error: 'A valid CMAC employee identity and role are required.' }, 422)
+      if (!/^[^@\s]+@cmaccontainers\.com$/.test(email) || !['admin', 'sales_rep'].includes(input.employee?.role ?? '') || !input.employee?.first_name?.trim() || !input.employee?.last_name?.trim()) return json(request, { error: 'A valid CMAC employee identity and role are required.' }, 422)
     } else if (!input.employee_id) return json(request, { error: 'Employee ID is required.' }, 422)
     const { data, error } = await auth.client.rpc('admin_manage_employee', { p_actor_employee_id: auth.employee.id, p_action: input.action, p_employee: input.employee ?? null, p_employee_id: input.employee_id ?? null })
     if (error) throw error

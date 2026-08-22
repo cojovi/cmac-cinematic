@@ -20,7 +20,7 @@ export function RequireEmployee() {
   const { loading, employee, session, configured, previewMode } = useAuth()
   const location = useLocation()
 
-  if (loading) return <GuardMessage kind="loading" title="Verifying access" copy="Checking your CMAC employee session and allowlist record." />
+  if (loading) return <GuardMessage kind="loading" title="Verifying access" copy="Checking your CMAC Workspace session and employee status." />
   if (previewMode && employee) return <Outlet />
   if (!configured) return <GuardMessage kind="denied" title="Configuration required" copy="Supabase authentication has not been configured for this environment. No employee access has been granted." />
   if (!session) return <Navigate to="/login" state={{ from: location.pathname }} replace />

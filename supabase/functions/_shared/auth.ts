@@ -33,7 +33,7 @@ export async function requireEmployee(request: Request, adminOnly = false) {
   const { data: userData, error: userError } = await client.auth.getUser(token)
   if (userError || !userData.user) return { error: 'The employee session is invalid or expired.', status: 401 as const }
   const { data, error } = await client.from('employees').select('id,email,display_name,rep_code,role,active').eq('auth_user_id', userData.user.id).eq('active', true).maybeSingle()
-  if (error || !data || !['admin', 'sales_rep'].includes(String(data.role))) return { error: 'This account is not on the active employee allowlist.', status: 403 as const }
+  if (error || !data || !['admin', 'sales_rep'].includes(String(data.role))) return { error: 'This CMAC employee account is not active.', status: 403 as const }
   if (adminOnly && data.role !== 'admin') return { error: 'Administrator access is required.', status: 403 as const }
   return { employee: data as EmployeeIdentity, token, client }
 }
