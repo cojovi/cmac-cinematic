@@ -42,20 +42,25 @@ The checked-in application uses two separate Google integrations:
 - Employee login requires a Google OAuth **Web application** client ID and client secret configured in Supabase Auth. The service-account client ID cannot be used for interactive employee sign-in.
 
 1. In Google Cloud, create an OAuth 2.0 Client ID with application type **Web application**. The installed-app credential and Gmail service account are not valid substitutes.
-2. Add this authorized redirect URI in Google Cloud:
+2. Add these **Authorized JavaScript origins** in Google Cloud:
+
+   - `https://cmac-cinematic.vercel.app`
+   - `http://localhost:5173`
+
+3. Add this **Authorized redirect URI** in Google Cloud:
 
    `https://gxiluyvhrrctslnhjkmc.supabase.co/auth/v1/callback`
 
-3. Configure the resulting Web client ID and client secret under Supabase Auth → Providers → Google, then enable Google.
-4. Set the Supabase Site URL to `https://cmac-cinematic.vercel.app` and allow these redirects:
+4. Configure the resulting Web client ID and client secret under Supabase Auth → Providers → Google, then enable Google.
+5. Set the Supabase Site URL to `https://cmac-cinematic.vercel.app` and allow these redirects:
 
    - `https://cmac-cinematic.vercel.app/auth/callback`
    - `http://localhost:5173/auth/callback`
 
-5. Bootstrap the first administrator allowlist row.
-6. Enable signups and configure the Before User Created hook at `pg-functions://postgres/private/before_user_created_hook`. The hook admits only active, allowlisted `@cmaccontainers.com` Google identities.
-7. Request identity only: OpenID, email, and profile.
-8. Confirm an unlisted CMAC account and every non-CMAC account are rejected.
+6. Bootstrap the first administrator allowlist row.
+7. Enable signups and configure the Before User Created hook at `pg-functions://postgres/private/before_user_created_hook`. The hook admits only active, allowlisted `@cmaccontainers.com` Google identities.
+8. Request identity only: OpenID, email, and profile.
+9. Confirm an unlisted CMAC account and every non-CMAC account are rejected.
 
 Live sessions query the active `employees` row. Deactivation therefore removes business-data access on the next check without waiting for OAuth token expiry.
 
