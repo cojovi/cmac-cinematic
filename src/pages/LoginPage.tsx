@@ -49,7 +49,7 @@ export default function LoginPage() {
               {configured && googleProviderStatus === 'unavailable' ? <p className="login-config-message login-error" role="alert">Google Workspace sign-in could not be checked. Please try again.</p> : null}
               {error ? <p className="login-config-message login-error" role="alert">{error}</p> : null}
             </div>
-            <span className="demo-credential-note"><LockKeyhole size={13} aria-hidden="true" /> CMAC Workspace accounts only · passwords never handled here</span>
+            <span className="demo-credential-note"><LockKeyhole size={13} aria-hidden="true" /> Authorized CMAC Google accounts only · passwords never handled here</span>
           </article>
 
           <article className="role-card role-card-client">

@@ -8,7 +8,7 @@ The application is production-capable but intentionally reports external service
 | --- | --- | --- |
 | Dedicated CRM Supabase | Deployed | `cmac_crm` (`gxiluyvhrrctslnhjkmc`) has the CRM schema, RLS, private Storage buckets, legacy-contact archive, and database hardening migrations. |
 | Google service account | Locally validated | JSON and `.env` identity, client ID, and private key match; the key parses successfully. |
-| Google employee sign-in | Provider and domain gate active | The Web OAuth client, production/local callbacks, and `private.before_user_created_hook` are active. New verified CMAC Workspace users are provisioned as sales representatives; Cody Viveiros is the bootstrapped administrator. |
+| Google employee sign-in | Provider and domain gate active | New verified Container-domain users are provisioned as sales representatives. Cody Viveiros is the sole bootstrapped administrator, with his Roofing-domain Google primary email mapped privately to his Container business identity. |
 | Bolt-Data aggregate | Validated | The configured project and key return HTTP 200 with the expected aggregate schema. |
 | Lead intake hashing | Active | Uses the built-in server-only service-role secret as its HMAC salt; an optional dedicated `LEAD_RATE_LIMIT_SECRET` can be supplied for independent rotation. |
 | CRM Edge Functions | Partially deployed | `submit-lead`, `admin-manage-employee`, `complete-unit-sale`, and `send-marketing-email` are active. Provider-dependent calls report not configured until their secrets are supplied. |
@@ -32,7 +32,18 @@ insert into public.employees (email, first_name, last_name, display_name, role)
 values ('first.admin@cmaccontainers.com', 'First', 'Admin', 'First Admin', 'admin');
 ```
 
-Do not hardcode a real employee in a migration. After the administrator signs in with the same Google email, the `auth.users` trigger links `auth_user_id` automatically and preserves the administrator role.
+Do not hardcode a real employee in a schema migration. If the administrator's Google primary address differs from the CRM business address, add one private mapping after the employee row exists:
+
+```sql
+insert into private.employee_google_identities (employee_id, google_email)
+select id, 'codyv@cmacroofing.com'
+from public.employees
+where email = 'codyv@cmaccontainers.com'
+on conflict (employee_id) do update
+set google_email = excluded.google_email;
+```
+
+After the administrator signs in with Google, the Auth identity trigger links `auth_user_id` through this mapping while preserving the Container business email, administrator role, and active status. The mapping table is private and unavailable through the browser Data API. An old email-only Auth record is not enough to grant portal access; the link occurs only after Supabase receives an actual Google identity.
 
 ## 2. Google Workspace sign-in
 
@@ -58,11 +69,11 @@ The checked-in application uses two separate Google integrations:
    - `http://localhost:5173/auth/callback`
 
 6. Bootstrap the first administrator row before opening domain signup.
-7. The Before User Created hook is configured at `pg-functions://postgres/private/before_user_created_hook`. It admits only Google identities in the exact `cmaccontainers.com` domain. A first-time domain user is automatically created as an active `sales_rep`; Google profile metadata cannot set roles or active status. Existing rows preserve their administrator-managed role and status, and an explicitly deactivated employee remains blocked.
+7. The Before User Created hook is configured at `pg-functions://postgres/private/before_user_created_hook`. It admits Google identities in the exact `cmaccontainers.com` domain plus server-managed exceptional mappings in `private.employee_google_identities`. A first-time Container-domain user is automatically created as an active `sales_rep`; Google profile metadata cannot set roles or active status. An exceptional identity only links its preselected employee and cannot create a role. Existing rows preserve their administrator-managed role and status, and an explicitly deactivated employee remains blocked.
 8. Request identity only: OpenID, email, and profile.
-9. Confirm a new CMAC account is provisioned as `sales_rep`, a deactivated CMAC account is rejected, and every non-CMAC or non-Google account is rejected.
+9. Confirm a new Container-domain account is provisioned as `sales_rep`, Cody's mapped `codyv@cmacroofing.com` identity links only to his administrator record, another Roofing-domain account is rejected, a deactivated employee is rejected, and every non-Google account is rejected.
 
-Live sessions query the active `employees` row. Deactivation therefore removes business-data access on the next check without waiting for OAuth token expiry. New users cannot promote themselves; only an authenticated administrator can intentionally manage employee roles through server-controlled workflows.
+Sales representatives must use actual Google Workspace accounts whose primary address ends in `@cmaccontainers.com`; a Gmail alias does not authenticate as a separate Google identity. Live sessions query the active `employees` row, so deactivation removes business-data access on the next check without waiting for OAuth token expiry. New users cannot promote themselves; only an authenticated administrator can intentionally manage employee roles through server-controlled workflows.
 
 ## 3. Bolt-Data aggregate inventory
 

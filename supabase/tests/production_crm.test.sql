@@ -1,14 +1,16 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(52);
 
 select has_table('public', 'employees', 'employees table exists');
 select has_table('public', 'contacts', 'contacts table exists');
 select has_table('public', 'leads', 'leads table exists');
 select has_table('public', 'deals', 'deals table exists');
 select has_table('public', 'unit_sales', 'unit attribution table exists');
+select has_table('private', 'employee_google_identities', 'private Google identity map exists');
 select ok((select relrowsecurity from pg_class where oid = 'public.contacts'::regclass), 'contacts RLS is enabled');
 select ok((select relrowsecurity from pg_class where oid = 'public.deals'::regclass), 'deals RLS is enabled');
+select ok(not has_table_privilege('authenticated', 'private.employee_google_identities', 'SELECT'), 'browser users cannot read exceptional identity mappings');
 select ok(not has_function_privilege('authenticated', 'public.admin_manage_employee(uuid,text,jsonb,uuid)', 'EXECUTE'), 'browser users cannot call admin service RPC');
 select ok(not has_function_privilege('anon', 'public.submit_public_lead(text,text,text,citext,text,text,text,text,text,text)', 'EXECUTE'), 'anonymous clients cannot bypass the lead Edge Function');
 select ok(not has_function_privilege('authenticated', 'public.complete_deal_sale(uuid,uuid,text)', 'EXECUTE'), 'browser users cannot bypass the sale-completion Edge Function');
@@ -17,7 +19,59 @@ insert into public.employees (id, email, first_name, last_name, display_name, ro
 values
   ('20000000-0000-0000-0000-000000000001', 'admin@cmaccontainers.com', 'Ada', 'Admin', 'Ada Admin', 'admin', 'CMAC-T001'),
   ('20000000-0000-0000-0000-000000000002', 'repa@cmaccontainers.com', 'Riley', 'Rep', 'Riley Rep', 'sales_rep', 'CMAC-T002'),
-  ('20000000-0000-0000-0000-000000000003', 'repb@cmaccontainers.com', 'Reese', 'Rep', 'Reese Rep', 'sales_rep', 'CMAC-T003');
+  ('20000000-0000-0000-0000-000000000003', 'repb@cmaccontainers.com', 'Reese', 'Rep', 'Reese Rep', 'sales_rep', 'CMAC-T003'),
+  ('20000000-0000-0000-0000-000000000006', 'owner@cmaccontainers.com', 'Owner', 'Admin', 'Owner Admin', 'admin', 'CMAC-T006'),
+  ('20000000-0000-0000-0000-000000000007', 'legacy.owner@cmaccontainers.com', 'Legacy', 'Owner', 'Legacy Owner', 'admin', 'CMAC-T007');
+
+insert into private.employee_google_identities (employee_id, google_email)
+values
+  ('20000000-0000-0000-0000-000000000006', 'owner.primary@cmacroofing.com'),
+  ('20000000-0000-0000-0000-000000000007', 'legacy.primary@cmacroofing.com');
+
+select is(
+  private.before_user_created_hook('{"user":{"email":"owner.primary@cmacroofing.com","app_metadata":{"provider":"google"}}}'::jsonb),
+  '{}'::jsonb,
+  'the explicitly mapped Roofing-domain Google identity is admitted'
+);
+select is(
+  private.before_user_created_hook('{"user":{"email":"another.person@cmacroofing.com","app_metadata":{"provider":"google"}}}'::jsonb)->'error'->>'http_code',
+  '403',
+  'every other Roofing-domain identity remains blocked'
+);
+
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values (
+  '00000000-0000-0000-0000-000000000000',
+  '10000000-0000-0000-0000-000000000006',
+  'authenticated',
+  'authenticated',
+  'owner.primary@cmacroofing.com',
+  '',
+  now(),
+  '{"provider":"google","providers":["google"]}',
+  '{"full_name":"Different Name","role":"sales_rep"}',
+  now(),
+  now()
+);
+select is((select role from public.employees where id = '20000000-0000-0000-0000-000000000006'), 'admin', 'mapped Google identity cannot alter the administrator role');
+select is((select auth_user_id from public.employees where id = '20000000-0000-0000-0000-000000000006'), '10000000-0000-0000-0000-000000000006'::uuid, 'mapped Google identity links the selected employee');
+select is((select email::text from public.employees where id = '20000000-0000-0000-0000-000000000006'), 'owner@cmaccontainers.com', 'mapped login preserves the employee business email');
+
+update public.employees set active = false where id = '20000000-0000-0000-0000-000000000006';
+select is(
+  private.before_user_created_hook('{"user":{"email":"owner.primary@cmacroofing.com","app_metadata":{"provider":"google"}}}'::jsonb)->'error'->>'http_code',
+  '403',
+  'deactivation also blocks an explicitly mapped Google identity'
+);
+update public.employees set active = true where id = '20000000-0000-0000-0000-000000000006';
+
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'legacy.primary@cmacroofing.com', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now());
+select is((select auth_user_id from public.employees where id = '20000000-0000-0000-0000-000000000007'), null, 'a pre-existing email-only auth record is not granted employee access');
+
+insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+values ('google-legacy-owner', '10000000-0000-0000-0000-000000000007', '{"sub":"google-legacy-owner","email":"legacy.primary@cmacroofing.com","email_verified":true}', 'google', now(), now(), now());
+select is((select auth_user_id from public.employees where id = '20000000-0000-0000-0000-000000000007'), '10000000-0000-0000-0000-000000000007'::uuid, 'adding an actual Google identity links the pre-existing auth user');
 
 select is(
   private.before_user_created_hook('{"user":{"email":"new.rep@cmaccontainers.com","app_metadata":{"provider":"google"}}}'::jsonb),
