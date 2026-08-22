@@ -1,5 +1,21 @@
 import { expect, test } from 'playwright/test'
 
+const portalRoutes = [
+  ['/employee-portal', /Good (morning|afternoon)/],
+  ['/employee-portal/leads', 'Lead pipeline'],
+  ['/employee-portal/customers', 'Contacts & customers'],
+  ['/employee-portal/tasks', 'Follow-up queue'],
+  ['/employee-portal/inventory', 'Availability & model selection'],
+  ['/employee-portal/marketing', 'Send from your CMAC Gmail'],
+  ['/employee-portal/sales/new', 'Build a clean, verifiable sale'],
+  ['/employee-portal/deals', 'Deal workspace'],
+  ['/employee-portal/quotes', 'Quote records'],
+  ['/employee-portal/contracts', 'Contract tracking'],
+  ['/employee-portal/documents', 'Transaction template register'],
+  ['/employee-portal/admin/employees', 'Employee access'],
+  ['/employee-portal/admin/marketing', 'Approved material library'],
+] as const
+
 test('public landing and lead form render without overflow', async ({ page }) => {
   await page.goto('http://127.0.0.1:4174/')
 
@@ -9,14 +25,38 @@ test('public landing and lead form render without overflow', async ({ page }) =>
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
-test('production login is Google-only and reports missing configuration', async ({ page }) => {
+test('production login is Google-only and requests the correct callback', async ({ page }) => {
+  await page.route('https://*/auth/v1/settings', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ external: { google: true } }),
+  }))
   await page.goto('http://127.0.0.1:4174/login')
 
   const googleButton = page.getByRole('button', { name: 'Continue with Google' })
   await expect(googleButton).toBeVisible()
-  await expect(googleButton).toBeDisabled()
+  await expect(googleButton).toBeEnabled()
   await expect(page.locator('input[type="password"]')).toHaveCount(0)
-  await expect(page.getByText('Google Workspace sign-in is not configured in this environment.')).toBeVisible()
+
+  await page.route('https://*/auth/v1/authorize**', (route) => route.abort())
+  const requestPromise = page.waitForRequest((request) => request.url().includes('/auth/v1/authorize'))
+  await googleButton.click()
+  const authorizeRequest = await requestPromise
+  const authorizeUrl = new URL(authorizeRequest.url())
+  expect(authorizeUrl.searchParams.get('provider')).toBe('google')
+  expect(authorizeUrl.searchParams.get('redirect_to')).toBe('http://127.0.0.1:4174/auth/callback')
+})
+
+test('disabled Google provider is contained in the login UI', async ({ page }) => {
+  await page.route('https://*/auth/v1/settings', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ external: { google: false } }),
+  }))
+  await page.goto('http://127.0.0.1:4174/login')
+
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeDisabled()
+  await expect(page.getByText('Google Workspace sign-in is not enabled in Supabase yet.')).toBeVisible()
 })
 
 test('direct employee routes refresh and interactive navigation works', async ({ page }, testInfo) => {
@@ -42,15 +82,19 @@ test('direct employee routes refresh and interactive navigation works', async ({
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
-test('theme preference persists', async ({ page }) => {
+test('every employee portal destination renders without horizontal overflow', async ({ page }) => {
+  for (const [route, heading] of portalRoutes) {
+    await page.goto(route)
+    await expect(page.getByRole('heading', { name: heading, level: 2 })).toBeVisible()
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+  }
+})
+
+test('the site is dark-only and exposes no theme control', async ({ page }) => {
   await page.goto('/employee-portal')
 
-  const before = await page.locator('html').getAttribute('data-theme')
-  await page.getByRole('button', { name: /Switch to (light|dark) mode/ }).click()
-  const after = await page.locator('html').getAttribute('data-theme')
-  expect(after).not.toBe(before)
-  await page.reload()
-  await expect(page.locator('html')).toHaveAttribute('data-theme', after ?? 'light')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.getByRole('button', { name: /Switch to (light|dark) mode/ })).toHaveCount(0)
 })
 
 test('DocuSign surfaces an explicit coming-soon state', async ({ page }) => {

@@ -27,7 +27,7 @@ Deno.serve(async (request) => {
     if (name.length < 2 || phone.length < 7 || !validEmail(email) || !projectType || location.length < 2 || !timing) return json(request, { error: 'Review the submitted fields.' }, 422)
 
     const secret = Deno.env.get('LEAD_RATE_LIMIT_SECRET')?.trim()
-    if (!secret) return json(request, { error: 'Lead intake is not configured.' }, 503)
+    if (!secret || secret.length < 32) return json(request, { error: 'Lead intake is not configured.' }, 503)
     const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('cf-connecting-ip') || 'unknown'
     const [ipHash, emailHash] = await Promise.all([hashIdentifier(forwarded, secret), hashIdentifier(email, secret)])
     const nameParts = name.split(/\s+/)

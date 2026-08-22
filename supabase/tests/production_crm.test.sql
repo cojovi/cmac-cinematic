@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(31);
 
 select has_table('public', 'employees', 'employees table exists');
 select has_table('public', 'contacts', 'contacts table exists');
@@ -11,6 +11,7 @@ select ok((select relrowsecurity from pg_class where oid = 'public.contacts'::re
 select ok((select relrowsecurity from pg_class where oid = 'public.deals'::regclass), 'deals RLS is enabled');
 select ok(not has_function_privilege('authenticated', 'public.admin_manage_employee(uuid,text,jsonb,uuid)', 'EXECUTE'), 'browser users cannot call admin service RPC');
 select ok(not has_function_privilege('anon', 'public.submit_public_lead(text,text,text,citext,text,text,text,text,text,text)', 'EXECUTE'), 'anonymous clients cannot bypass the lead Edge Function');
+select ok(not has_function_privilege('authenticated', 'public.complete_deal_sale(uuid,uuid,text)', 'EXECUTE'), 'browser users cannot bypass the sale-completion Edge Function');
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
@@ -68,18 +69,37 @@ update private.lead_assignment_state set last_employee_id = null where singleton
 select is((select private.assign_next_sales_rep()), '20000000-0000-0000-0000-000000000002'::uuid, 'round-robin begins with first active rep code');
 select is((select private.assign_next_sales_rep()), '20000000-0000-0000-0000-000000000003'::uuid, 'round-robin advances transaction-safely');
 
+select is(
+  (public.submit_public_lead(
+    'Rate', 'Limit', 'Rate Limit Test', 'rate-limit-test@example.com', '5555550100',
+    'Container Home', 'Test City', 'This year', 'test-ip-hash', 'test-email-hash'
+  )->>'duplicate')::boolean,
+  false,
+  'first public lead submission is accepted as a new inquiry'
+);
+select is(
+  (public.submit_public_lead(
+    'Rate', 'Limit', 'Rate Limit Test', 'rate-limit-test@example.com', '5555550100',
+    'Container Home', 'Test City', 'This year', 'test-ip-hash', 'test-email-hash'
+  )->>'duplicate')::boolean,
+  true,
+  'rapid repeat submission is acknowledged without creating another lead'
+);
+select is(
+  (select count(*)::integer from private.lead_submission_attempts where email_hash = 'test-email-hash'),
+  2,
+  'duplicate attempts are recorded so rate limits cannot be bypassed'
+);
+
 insert into public.deals (id, contact_id, sales_rep_id, base_amount)
 values ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', 50000);
 insert into public.deal_units (deal_id, source, external_unit_id, external_product_type)
 values ('40000000-0000-0000-0000-000000000001', 'mock', 'MODEL-LIVING-40', 'CMAC Living 40');
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
 select throws_ok(
-  $$select public.complete_deal_sale('40000000-0000-0000-0000-000000000001')$$,
+  $$select public.complete_deal_sale('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002')$$,
   'P0001', 'Every unit must have a confirmed non-mock reference', 'mock units cannot be marked sold'
 );
-reset role;
 
 delete from public.deal_units where deal_id = '40000000-0000-0000-0000-000000000001';
 insert into public.deal_units (deal_id, source, external_unit_id, external_product_type, confirmed_by, confirmed_at)
@@ -89,13 +109,10 @@ values ('50000000-0000-0000-0000-000000000001', 'Test agreement', 'test-agreemen
 insert into public.contracts (deal_id, contact_id, employee_id, template_id, status, provider_envelope_id, completed_at)
 values ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000001', 'completed', 'test-envelope', now());
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
-select lives_ok($$select public.complete_deal_sale('40000000-0000-0000-0000-000000000001')$$, 'confirmed unit with completed contract can be sold');
-select lives_ok($$select public.complete_deal_sale('40000000-0000-0000-0000-000000000001')$$, 'sale completion is idempotent on retry');
+select lives_ok($$select public.complete_deal_sale('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002')$$, 'confirmed unit with completed contract can be sold');
+select lives_ok($$select public.complete_deal_sale('40000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002')$$, 'sale completion is idempotent on retry');
 select is((select count(*)::integer from public.unit_sales where deal_id = '40000000-0000-0000-0000-000000000001'), 1, 'one idempotent unit sale exists');
 select is((select lifecycle_stage from public.contacts where id = '30000000-0000-0000-0000-000000000001'), 'customer', 'completed sale promotes contact lifecycle');
-reset role;
 
 insert into public.quotes (id, contact_id, employee_id, subtotal, tax, delivery_amount)
 values ('60000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002', 50000, 4125, 3500);

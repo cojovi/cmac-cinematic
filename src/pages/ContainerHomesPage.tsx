@@ -157,14 +157,14 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
       return
     }
     if (!supabase) {
-      setFormStatus({ type: 'error', message: 'Online inquiries are not configured yet. Please call (469) 886-8944.' })
+      setFormStatus({ type: 'error', message: 'Online inquiries are not configured yet. Please call (831) 262-3222.' })
       return
     }
     setFormStatus({ type: 'submitting', message: 'Sending your project details securely…' })
     const { data, error } = await supabase.functions.invoke('submit-lead', { body: parsed.data })
     const accepted = (data as { accepted?: boolean } | null)?.accepted
     if (error || !accepted) {
-      setFormStatus({ type: 'error', message: 'We could not submit your inquiry. Please try again or call (469) 886-8944.' })
+      setFormStatus({ type: 'error', message: 'We could not submit your inquiry. Please try again or call (831) 262-3222.' })
       return
     }
     setForm(initialForm)

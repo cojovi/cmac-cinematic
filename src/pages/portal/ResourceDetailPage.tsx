@@ -5,10 +5,11 @@ import { usePortalRows } from '../../hooks/usePortalRows'
 import { PortalEmpty, PortalError, PortalLoading } from '../../components/portal/AsyncState'
 import { useAuth } from '../../auth/useAuth'
 import { supabase } from '../../lib/supabase'
+import type { PublicTableName, TablesInsert } from '../../lib/database.types'
 
 type DetailResource = 'leads' | 'customers' | 'deals'
 
-const tableByResource: Record<DetailResource, string> = { leads: 'leads', customers: 'contacts', deals: 'deals' }
+const tableByResource: Record<DetailResource, PublicTableName> = { leads: 'leads', customers: 'contacts', deals: 'deals' }
 const paramByResource: Record<DetailResource, string> = { leads: 'leadId', customers: 'contactId', deals: 'dealId' }
 const dateTime = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 
@@ -32,13 +33,16 @@ export default function ResourceDetailPage({ resource }: { resource: DetailResou
   async function addNote(event: FormEvent) {
     event.preventDefault()
     if (!note.trim() || previewMode || !supabase || !employee) return
-    const { error } = await supabase.from('activities').insert({
-      [activityFilter]: id,
+    const activity: TablesInsert<'activities'> = {
+      contact_id: resource === 'customers' ? id : String(record?.contact_id ?? '') || null,
+      lead_id: resource === 'leads' ? id : null,
+      deal_id: resource === 'deals' ? id : null,
       employee_id: employee.id,
       activity_type: 'note_added',
       title: 'Note added',
       description: note.trim(),
-    })
+    }
+    const { error } = await supabase.from('activities').insert(activity)
     setActionMessage(error?.message ?? 'Note saved to the timeline.')
     if (!error) { setNote(''); await activityQuery.reload() }
   }

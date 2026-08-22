@@ -512,16 +512,24 @@ declare
   contact_record public.contacts%rowtype;
   owner_id uuid;
   lead_id uuid;
+  rapid_duplicate boolean;
 begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_email_hash, 0));
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_ip_hash, 1));
+
   if (select count(*) from private.lead_submission_attempts a where a.ip_hash = p_ip_hash and a.submitted_at > now() - interval '1 hour') >= 5
     or (select count(*) from private.lead_submission_attempts a where a.email_hash = p_email_hash and a.submitted_at > now() - interval '1 hour') >= 3 then
     return jsonb_build_object('accepted', false, 'reason', 'rate_limited');
   end if;
 
-  if exists (
+  select exists (
     select 1 from private.lead_submission_attempts a
     where a.email_hash = p_email_hash and a.submitted_at > now() - interval '15 minutes'
-  ) then
+  ) into rapid_duplicate;
+
+  insert into private.lead_submission_attempts (ip_hash, email_hash) values (p_ip_hash, p_email_hash);
+
+  if rapid_duplicate then
     return jsonb_build_object('accepted', true, 'duplicate', true);
   end if;
 
@@ -575,13 +583,11 @@ begin
     concat_ws(' · ', p_project_type, p_project_location, p_desired_timing)
   );
 
-  insert into private.lead_submission_attempts (ip_hash, email_hash) values (p_ip_hash, p_email_hash);
-
   return jsonb_build_object('accepted', true, 'duplicate', false);
 end;
 $$;
 
-create or replace function public.complete_deal_sale(p_deal_id uuid, p_override_reason text default null)
+create or replace function public.complete_deal_sale(p_deal_id uuid, p_actor_employee_id uuid, p_override_reason text default null)
 returns jsonb
 language plpgsql
 security definer
@@ -594,7 +600,7 @@ declare
   has_completed_contract boolean;
 begin
   select e.* into actor from public.employees e
-  where e.auth_user_id = (select auth.uid()) and e.active = true;
+  where e.id = p_actor_employee_id and e.active = true;
   if not found then raise exception 'Unauthorized'; end if;
 
   select d.* into deal_record from public.deals d where d.id = p_deal_id for update;
@@ -676,8 +682,8 @@ grant execute on function private.assign_next_sales_rep() to service_role;
 
 revoke all on function public.submit_public_lead(text, text, text, extensions.citext, text, text, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.submit_public_lead(text, text, text, extensions.citext, text, text, text, text, text, text) to service_role;
-revoke all on function public.complete_deal_sale(uuid, text) from public, anon;
-grant execute on function public.complete_deal_sale(uuid, text) to authenticated, service_role;
+revoke all on function public.complete_deal_sale(uuid, uuid, text) from public, anon, authenticated;
+grant execute on function public.complete_deal_sale(uuid, uuid, text) to service_role;
 
 alter table public.employees enable row level security;
 alter table public.contacts enable row level security;

@@ -1,4 +1,4 @@
-import { requireEmployee, userClient } from '../_shared/auth.ts'
+import { requireEmployee, serviceClient } from '../_shared/auth.ts'
 import { json, options, parseJson } from '../_shared/http.ts'
 
 interface Input { deal_id?: string; override_reason?: string }
@@ -12,8 +12,12 @@ Deno.serve(async (request) => {
     const input = await parseJson<Input>(request)
     if (!input.deal_id) return json(request, { error: 'Deal ID is required.' }, 422)
     if (input.override_reason && auth.employee.role !== 'admin') return json(request, { error: 'Only administrators may supply a completion override.' }, 403)
-    const client = userClient(request)
-    const { data, error } = await client.rpc('complete_deal_sale', { p_deal_id: input.deal_id, p_override_reason: input.override_reason?.trim() || null })
+    const client = serviceClient()
+    const { data, error } = await client.rpc('complete_deal_sale', {
+      p_deal_id: input.deal_id,
+      p_actor_employee_id: auth.employee.id,
+      p_override_reason: input.override_reason?.trim() || null,
+    })
     if (error) throw error
     return json(request, { message: 'Deal completion recorded.', result: data })
   } catch (error) {

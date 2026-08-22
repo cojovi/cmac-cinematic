@@ -1,6 +1,6 @@
 # CMAC Container Homes — Design & Implementation Spec
 
-This branch is the public marketing and prototype sales workspace for **CMAC Container Homes**. Roofing is intentionally outside its product and navigation scope.
+This branch is the public marketing site and production-oriented sales CRM for **CMAC Container Homes**. Roofing is intentionally outside its product and navigation scope.
 
 ## Product Position
 
@@ -8,16 +8,17 @@ This branch is the public marketing and prototype sales workspace for **CMAC Con
 - Primary audiences: residential buyers, workforce-housing operators, and commercial/custom-space clients.
 - Primary conversion: start a project consultation.
 - Secondary conversion: direct phone or email contact.
-- Internal prototype goal: let sales representatives assemble a customer-ready unit sale package.
+- Internal product goal: let authorized sales representatives manage leads, contacts, tasks, outreach, quotes, deal drafts, and auditable unit attribution.
 
 ## Routing
 
 - `/` is the canonical landing page.
 - `/login` is the employee/client role gateway.
-- `/employee-portal` is the demo sales-preparation workspace.
+- `/auth/callback` completes the Supabase Google OAuth flow.
+- `/employee-portal` is the protected sales workspace, with nested routes for leads, customers, tasks, inventory, marketing, deals, quotes, contracts, documents, and administration.
 - `/client-portal` is the client experience coming-soon page.
-- Legacy and unknown client-side paths normalize to `/` for backward compatibility.
-- A lightweight History API view router handles these four routes; landing-page sections still use native anchors.
+- React Router owns application navigation; Vercel rewrites non-API direct requests to the Vite entry point so refreshes work.
+- Landing-page sections continue to use native anchors.
 
 ## Page Structure
 
@@ -36,15 +37,15 @@ This branch is the public marketing and prototype sales workspace for **CMAC Con
 ## Portal Structure
 
 1. The public header exposes a dedicated **Login** tab on desktop and mobile.
-2. The login gateway separates employee and client entry paths and labels the environment as a prototype.
-3. Employee access accepts any non-empty email/password during testing and opens the sales workspace.
-4. The employee workflow has four stages: unit selection, customer/site details, document package, and final review.
-5. The review includes editable deposit and delivery assumptions, base pricing, customer data, and selected documents.
-6. Preview and email actions are simulations; neither generates a PDF, stores customer data, nor transmits email.
+2. The login gateway separates Google-only employee access from the client coming-soon experience.
+3. Employee authorization requires Supabase Google OAuth, an active `@cmaccontainers.com` allowlist row, and an `admin` or `sales_rep` role.
+4. The employee workflow has four stages: model reference, customer/site details, optional transaction metadata and real-unit confirmation, then review/save.
+5. Deal and quote records persist to Supabase; model cards remain clearly identified mock references until a real unit ID is confirmed.
+6. External actions never simulate success. Gmail reports not configured without hosted delegation secrets, and DocuSign is explicitly deferred behind Coming Soon states.
 7. The client route is a designed coming-soon page for future signatures, invoices, payments, and build updates.
-8. The employee sidebar and compact mobile tab rail expose five working destinations: Overview, New Sale, Inventory, Documents, and Customers.
-9. Overview presents a mock pipeline and actionable follow-ups; Inventory supports availability filters and unit-to-sale handoff; Documents supports search, category filters, previews, and package handoff; Customers supports search, record details, and customer-to-sale handoff.
-10. Portal records, metrics, activity, availability, document versions, and customer values are intentionally fictional prototype data.
+8. The responsive employee shell exposes role-aware destinations and protected admin areas.
+9. Aggregate inventory is read server-side from the separate Bolt-Data project. Individual model cards remain an explicit mock provider for this iteration.
+10. Local preview uses fictional fixtures for visual testing; production sessions use CRM data protected by grants and row-level security.
 
 ### Proposed sales document bundle
 
@@ -82,14 +83,12 @@ The signature gesture is a **blueprint/coordinate language**: section indices, c
 - Metallic border: `rgba(205, 224, 234, 0.16)`
 - Panel radius: `18px` desktop, `13px` mobile
 
-## Color Modes
+## Color System
 
-- Dark mode remains the first-visit default and preserves the original cinematic CMAC presentation.
-- Light mode uses architectural white, pale steel, graphite text, technical grid lines, and the same CMAC signal red.
-- The hero, flagship model, and final CTA remain dark image-led anchor sections in both modes so photography and conversion contrast stay intentional.
-- A machined two-position **Light / Dark** control appears in the public navigation, access headers, and employee portal. Mobile headers use the same control in a compact icon treatment; the public mobile menu exposes the fully labeled version.
-- An explicit choice is stored under `cmac-color-theme`. System color preference is intentionally ignored so new visitors always begin in dark mode.
-- The HTML theme attribute is applied before React loads to prevent a flash of the wrong color mode on returning visits.
+- The cinematic dark presentation is the sole site theme.
+- Image-led hero, flagship, access, and portal surfaces share the same graphite, steel, and CMAC signal-red system.
+- No theme preference is stored and no light/dark control is presented.
+- The root HTML element declares the dark color scheme before React loads so browser chrome and native controls remain consistent.
 
 ## Interaction & Accessibility
 

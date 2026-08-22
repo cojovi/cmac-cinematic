@@ -1,6 +1,5 @@
 import { LogIn, Menu, Phone, X } from 'lucide-react'
 import { Logo } from './ui'
-import { ThemeToggle } from './ThemeToggle'
 
 type SiteHeaderProps = {
   menuOpen: boolean
@@ -42,10 +41,8 @@ export function SiteHeader({ menuOpen, onMenuToggle, onNavigate, onRouteNavigate
         <a className="mobile-nav-phone" href="tel:8312623222" onClick={onNavigate}>
           <Phone size={15} aria-hidden="true" /> (831) 262-3222
         </a>
-        <ThemeToggle className="mobile-theme-toggle" />
       </nav>
       <div className="nav-actions">
-        <ThemeToggle />
         <a className="phone-pill" href="tel:8312623222" aria-label="Call CMAC Container Homes at 831 262 3222">
           <Phone size={14} aria-hidden="true" /> (831) 262-3222
         </a>

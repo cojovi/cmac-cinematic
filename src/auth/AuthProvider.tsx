@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { isSupabaseConfigured, localPortalPreviewEnabled, supabase } from '../lib/supabase'
+import { googleProviderIsEnabled, isSupabaseConfigured, localPortalPreviewEnabled, supabase } from '../lib/supabase'
 import type { EmployeeRow } from '../lib/database.types'
 import { AuthContext } from './auth-context'
 
@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [employee, setEmployee] = useState<EmployeeRow | null>(localPortalPreviewEnabled ? localPreviewEmployee : null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [googleProviderStatus, setGoogleProviderStatus] = useState<'checking' | 'enabled' | 'disabled' | 'unavailable'>(isSupabaseConfigured ? 'checking' : 'disabled')
   const [error, setError] = useState<string | null>(null)
 
   const loadEmployee = useCallback(async (nextSession: Session | null) => {
@@ -74,8 +75,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadEmployee])
 
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+    let current = true
+    googleProviderIsEnabled()
+      .then((enabled) => {
+        if (current) setGoogleProviderStatus(enabled ? 'enabled' : 'disabled')
+      })
+      .catch(() => {
+        if (current) setGoogleProviderStatus('unavailable')
+      })
+    return () => { current = false }
+  }, [])
+
   const signInWithGoogle = useCallback(async () => {
-    if (!supabase) {
+    if (!supabase || googleProviderStatus !== 'enabled') {
       setError('Employee sign-in is not configured in this environment.')
       return
     }
@@ -88,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     })
     if (oauthError) setError(oauthError.message)
-  }, [])
+  }, [googleProviderStatus])
 
   const signOut = useCallback(async () => {
     if (supabase) await supabase.auth.signOut()
@@ -105,12 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     employee,
     loading,
     configured: isSupabaseConfigured,
+    googleProviderStatus,
     previewMode: localPortalPreviewEnabled,
     error,
     signInWithGoogle,
     signOut,
     refreshEmployee,
-  }), [session, employee, loading, error, signInWithGoogle, signOut, refreshEmployee])
+  }), [session, employee, loading, googleProviderStatus, error, signInWithGoogle, signOut, refreshEmployee])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

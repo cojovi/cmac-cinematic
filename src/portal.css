@@ -314,7 +314,6 @@
   margin-top: auto;
 }
 
-.demo-login-form label,
 .portal-form-grid label,
 .summary-controls label {
   color: #cbd4d8;
@@ -324,7 +323,6 @@
   text-transform: uppercase;
 }
 
-.demo-login-form input,
 .portal-form-grid input,
 .portal-form-grid textarea,
 .summary-controls select {
@@ -336,13 +334,6 @@
   transition: border-color 180ms ease, background 180ms ease;
 }
 
-.demo-login-form input {
-  height: 47px;
-  padding: 0 14px;
-  margin-bottom: 5px;
-}
-
-.demo-login-form input:focus,
 .portal-form-grid input:focus,
 .portal-form-grid textarea:focus,
 .summary-controls select:focus {
@@ -350,26 +341,6 @@
   background: rgba(8, 13, 15, 0.9);
   outline: none;
   box-shadow: 0 0 0 3px rgba(242, 41, 41, 0.12);
-}
-
-.password-field {
-  position: relative;
-}
-
-.password-field input {
-  padding-right: 44px;
-}
-
-.password-field button {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 44px;
-  height: 47px;
-  display: grid;
-  place-items: center;
-  color: var(--muted);
-  background: transparent;
 }
 
 .portal-primary-button,
@@ -3358,41 +3329,14 @@
 .material-admin-list strong { font-size: 10px; }
 .material-admin-list div > span { color: var(--dim); font-size: 8px; }
 
-:root[data-theme="light"] .production-portal,
-:root[data-theme="light"] .production-portal .portal-workspace { background: #e9eceb; }
-:root[data-theme="light"] .production-portal .portal-sidebar { background: linear-gradient(155deg, #20282c, #111719 70%); }
-:root[data-theme="light"] .production-portal .portal-sidebar .portal-user strong,
-:root[data-theme="light"] .production-portal .portal-sidebar .logo strong { color: #f4f7f8; }
-:root[data-theme="light"] .production-portal .portal-sidebar .portal-user span { color: #91a0a6; }
-:root[data-theme="light"] .production-portal .portal-sidebar .portal-env { color: #d9e0e2; border-color: rgba(255,255,255,.12); background: rgba(255,255,255,.04); }
-:root[data-theme="light"] .production-portal .portal-sidebar .portal-env strong { color: #829097; }
-:root[data-theme="light"] .production-portal .portal-sidebar .portal-sidebar-bottom > button { color: #9facb2; }
-:root[data-theme="light"] .production-portal .portal-sidebar .portal-sidebar-bottom > button:hover { color: #fff; background: rgba(255,255,255,.05); }
-:root[data-theme="light"] .production-portal .portal-topbar { background: rgba(245, 247, 246, 0.94); }
-:root[data-theme="light"] .production-portal .portal-topbar h1,
-:root[data-theme="light"] .production-main { color: #172024; }
-:root[data-theme="light"] .production-main .workspace-card,
-:root[data-theme="light"] .production-main .portal-panel,
-:root[data-theme="light"] .production-main .deal-summary,
-:root[data-theme="light"] .production-main .resource-table,
-:root[data-theme="light"] .production-main .inventory-model-card,
-:root[data-theme="light"] .production-main .record-hero,
-:root[data-theme="light"] .production-main .employee-register,
-:root[data-theme="light"] .production-main .material-admin-list,
-:root[data-theme="light"] .production-main .template-register article { color: #172024; border-color: rgba(22, 34, 40, 0.15); background: #f7f8f7; box-shadow: 0 12px 28px rgba(20, 31, 36, 0.07); }
-:root[data-theme="light"] .production-main :is(input, textarea, select) { color: #172024; border-color: rgba(22,34,40,.18); background-color: #fff; }
-:root[data-theme="light"] .production-main .workspace-search,
-:root[data-theme="light"] .production-main .resource-status-filter { color: #46555b; border-color: rgba(22,34,40,.16); background: #fff; }
-:root[data-theme="light"] .production-main .status-pill { color: #3d4c52; border-color: rgba(22,34,40,.16); background: rgba(22,34,40,.03); }
-:root[data-theme="light"] .production-main .inventory-headline { color: #172024; background: linear-gradient(100deg, rgba(43,151,86,.1), transparent 60%), #f8faf8; }
-:root[data-theme="light"] .production-main .coming-soon-banner { color: #172024; background: radial-gradient(circle at 88% 40%, rgba(202, 125, 16, .12), transparent 27%), #fffaf1; box-shadow: inset 3px 0 #d28519, 0 12px 28px rgba(20, 31, 36, 0.07); }
-:root[data-theme="light"] .production-main .coming-soon-banner p { color: #5f6d72; }
-
 @media (max-width: 1120px) {
   .production-overview,
   .inventory-model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .marketing-compose,
   .admin-grid { grid-template-columns: 1fr; }
+  .template-register article { grid-template-columns: 42px minmax(0, 1fr); }
+  .template-register .status-pill,
+  .template-register dl { grid-column: 2; }
 }
 
 @media (max-width: 760px) {
@@ -3439,7 +3383,6 @@
 @media (max-width: 460px) {
   .inventory-model-grid { grid-template-columns: 1fr; }
   .production-portal .portal-topbar { gap: 8px; padding-inline: 12px; }
-  .production-portal .portal-top-actions .theme-toggle { transform: scale(.88); transform-origin: right center; }
   .production-main .workspace-view-heading { padding: 18px 15px; }
   .production-main .workspace-view-heading h2 { font-size: 19px; }
   .portal-stepper button { flex-direction: column; line-height: 1.2; }

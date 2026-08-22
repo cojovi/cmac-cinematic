@@ -6,7 +6,6 @@ import {
   ShieldCheck, UserCog, UsersRound, X, type LucideIcon,
 } from 'lucide-react'
 import { Logo } from '../components/ui'
-import { ThemeToggle } from '../components/ThemeToggle'
 import { useAuth } from '../auth/useAuth'
 
 interface NavItem { to: string; label: string; Icon: LucideIcon; admin?: boolean }
@@ -80,7 +79,7 @@ export default function EmployeePortalLayout() {
             <button className="portal-mobile-menu" type="button" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
             <div><span className="portal-breadcrumb">{meta[1]}</span><h1>{meta[2]}</h1></div>
           </div>
-          <div className="portal-top-actions"><ThemeToggle /><span className="draft-status"><span /> {previewMode ? 'Local preview' : 'Secure session'}</span></div>
+          <div className="portal-top-actions"><span className="draft-status"><span /> {previewMode ? 'Local preview' : 'Secure session'}</span></div>
         </header>
         <main id="portal-main" className="portal-main production-main"><Outlet /></main>
       </div>

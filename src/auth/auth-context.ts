@@ -7,6 +7,7 @@ export interface AuthContextValue {
   employee: EmployeeRow | null
   loading: boolean
   configured: boolean
+  googleProviderStatus: 'checking' | 'enabled' | 'disabled' | 'unavailable'
   previewMode: boolean
   error: string | null
   signInWithGoogle: () => Promise<void>

@@ -1,22 +1,12 @@
-import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { LoaderCircle, ShieldCheck } from 'lucide-react'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/useAuth'
 
 export default function AuthCallbackPage() {
-  const navigate = useNavigate()
-  const { session, employee, loading } = useAuth()
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('code')
-    if (!supabase || !code) return
-    supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
-      if (exchangeError) setError(exchangeError.message)
-      else navigate('/employee-portal', { replace: true })
-    })
-  }, [navigate])
+  const { session, employee, loading, error: authError } = useAuth()
+  const params = new URLSearchParams(window.location.search)
+  const providerError = params.get('error_description') ?? params.get('error')
+  const error = providerError ?? (!loading ? authError : null)
 
   if (!loading && session && employee) return <Navigate to="/employee-portal" replace />
 

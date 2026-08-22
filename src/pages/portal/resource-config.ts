@@ -1,10 +1,11 @@
 import type { LucideIcon } from 'lucide-react'
 import { BriefcaseBusiness, ClipboardCheck, FileSignature, ReceiptText, UsersRound, BookOpenCheck } from 'lucide-react'
+import type { PublicTableName } from '../../lib/database.types'
 
 export type ResourceName = 'leads' | 'customers' | 'tasks' | 'deals' | 'quotes' | 'contracts'
 
 export interface ResourceConfig {
-  table: string
+  table: PublicTableName
   title: string
   eyebrow: string
   copy: string

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { JsonRecord } from '../lib/database.types'
+import type { JsonRecord, PublicTableName } from '../lib/database.types'
 import { portalFixtures } from '../lib/portal-fixtures'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../auth/useAuth'
@@ -12,7 +12,7 @@ interface QueryOptions {
   filter?: { column: string; value: string }
 }
 
-export function usePortalRows(table: string, options: QueryOptions = {}) {
+export function usePortalRows(table: PublicTableName, options: QueryOptions = {}) {
   const { previewMode } = useAuth()
   const [rows, setRows] = useState<JsonRecord[]>([])
   const [loading, setLoading] = useState(true)

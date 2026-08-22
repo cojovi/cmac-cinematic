@@ -1,4 +1,10 @@
-const defaultOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://cmaccontainers.com', 'https://www.cmaccontainers.com']
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'https://cmac-cinematic.vercel.app',
+  'https://cmaccontainers.com',
+  'https://www.cmaccontainers.com',
+]
 
 export function corsHeaders(request: Request) {
   const configured = (Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map((item) => item.trim()).filter(Boolean)

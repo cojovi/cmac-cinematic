@@ -6,13 +6,13 @@ import { useAuth } from '../auth/useAuth'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { employee, session, configured, loading, error, signInWithGoogle } = useAuth()
+  const { employee, session, configured, googleProviderStatus, previewMode, loading, error, signInWithGoogle } = useAuth()
 
   useEffect(() => {
     document.title = 'Login | CMAC Container Homes'
   }, [])
 
-  if (!loading && employee && (session || !configured)) return <Navigate to="/employee-portal" replace />
+  if (!loading && employee && (session || previewMode)) return <Navigate to="/employee-portal" replace />
 
   return (
     <div className="access-page">
@@ -40,10 +40,13 @@ export default function LoginPage() {
             <h2>Employee Login</h2>
             <p>Manage leads, follow-ups, approved outreach, quotes, contracts, and auditable unit sales.</p>
             <div className="demo-login-form production-login-action">
-              <button className="portal-primary-button" type="button" onClick={() => void signInWithGoogle()} disabled={!configured || loading}>
+              <button className="portal-primary-button" type="button" onClick={() => void signInWithGoogle()} disabled={!configured || loading || googleProviderStatus !== 'enabled'}>
                 <KeyRound size={17} aria-hidden="true" /> Continue with Google
               </button>
               {!configured ? <p className="login-config-message" role="status">Google Workspace sign-in is not configured in this environment.</p> : null}
+              {configured && googleProviderStatus === 'checking' ? <p className="login-config-message" role="status">Checking Google Workspace sign-in…</p> : null}
+              {configured && googleProviderStatus === 'disabled' ? <p className="login-config-message login-error" role="alert">Google Workspace sign-in is not enabled in Supabase yet.</p> : null}
+              {configured && googleProviderStatus === 'unavailable' ? <p className="login-config-message login-error" role="alert">Google Workspace sign-in could not be checked. Please try again.</p> : null}
               {error ? <p className="login-config-message login-error" role="alert">{error}</p> : null}
             </div>
             <span className="demo-credential-note"><LockKeyhole size={13} aria-hidden="true" /> CMAC Workspace accounts only · passwords never handled here</span>
