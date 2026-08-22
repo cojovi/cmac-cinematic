@@ -2,9 +2,20 @@
 
 The application is production-capable but intentionally reports external services as **not configured** until CMAC supplies credentials. Never place secrets in `.env` files committed to source control.
 
+## Configuration status — August 21, 2026
+
+| Area | Status | Next checkpoint |
+| --- | --- | --- |
+| Dedicated CRM Supabase | Awaiting approval | Create `cmac_containers_crm` in the only available organization after the $10/month project cost is confirmed. |
+| Google service account | Locally validated | JSON and `.env` identity, client ID, and private key match; the key parses successfully. |
+| Google employee sign-in | Needs OAuth web client | A service account supports Gmail delegation but does not replace the Google OAuth Web client ID/secret required by Supabase Auth. |
+| Bolt-Data aggregate | Validated | The configured project and key return HTTP 200 with the expected aggregate schema. |
+| Lead intake secret | Missing | Add a random `LEAD_RATE_LIMIT_SECRET` of at least 32 characters before deploying `submit-lead`. |
+| DocuSign | Deferred | The portal presents a Coming Soon state and no envelope action is deployed for this release. |
+
 ## 1. CRM Supabase project
 
-1. Create a dedicated Supabase project for the CRM. Do not reuse Bolt-Data.
+1. Create the dedicated `cmac_containers_crm` Supabase project. Do not reuse Bolt-Data. The project is awaiting explicit confirmation of Supabase's $10/month charge.
 2. Apply the migrations in `supabase/migrations` with the Supabase CLI.
 3. Run database/security advisors and resolve findings before production promotion.
 4. Configure the browser values `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in Vercel.
@@ -23,6 +34,11 @@ Do not hardcode a real employee in a migration. After the administrator signs in
 
 ## 2. Google Workspace sign-in
 
+The checked-in application uses two separate Google integrations:
+
+- The supplied service account is for server-side Gmail delegation. Its local JSON and `.env` values have been validated and the credential files are Git-ignored.
+- Employee login requires a Google OAuth **Web application** client ID and client secret configured in Supabase Auth. The service-account client ID cannot be used for interactive employee sign-in.
+
 1. Configure Google OAuth in Supabase Auth using the project callback URL.
 2. Request identity only: OpenID, email, and profile.
 3. Add the production `/auth/callback` URL to Supabase redirect allowlists.
@@ -32,6 +48,8 @@ Do not hardcode a real employee in a migration. After the administrator signs in
 Live sessions query the active `employees` row. Deactivation therefore removes business-data access on the next check without waiting for OAuth token expiry.
 
 ## 3. Bolt-Data aggregate inventory
+
+The configured Bolt-Data URL resolves to the existing `bolt-data` project. A protected read of `public.mini_homes_inventory` returned HTTP 200 and the expected `available_inventory`, `allocated_boss`, and `last_synced_at` fields. No raw Bolt tables were queried.
 
 Set these as server-only Vercel values:
 
@@ -52,7 +70,11 @@ The identity must be read-only in practice and `/api/inventory` must query only 
 
 The function creates MIME messages, enforces an 18 MB pre-encoding attachment ceiling, and records activity only after Gmail returns a message ID. Ambiguous transport outcomes are recorded as `unknown` and require checking Sent mail before retrying.
 
-## 5. DocuSign
+## 5. DocuSign — deferred
+
+DocuSign is intentionally out of scope for the current release. The portal displays a Coming Soon banner and does not invoke envelope creation. Keep all DocuSign variables empty until this section is resumed.
+
+### Later iteration
 
 Use the central CMAC integration user and reusable approved templates. Set:
 

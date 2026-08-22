@@ -52,3 +52,11 @@ test('theme preference persists', async ({ page }) => {
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', after ?? 'light')
 })
+
+test('DocuSign surfaces an explicit coming-soon state', async ({ page }) => {
+  await page.goto('/employee-portal/contracts')
+
+  await expect(page.getByRole('heading', { name: 'Contract tracking' })).toBeVisible()
+  await expect(page.getByText('DocuSign contract delivery is paused for this release')).toBeVisible()
+  await expect(page.getByText('Deferred', { exact: true })).toBeVisible()
+})

@@ -2,7 +2,7 @@ import { useDeferredValue, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Clock3, Search, X } from 'lucide-react'
 import { usePortalRows } from '../../hooks/usePortalRows'
-import { PortalEmpty, PortalError, PortalLoading } from '../../components/portal/AsyncState'
+import { ComingSoonBanner, PortalEmpty, PortalError, PortalLoading } from '../../components/portal/AsyncState'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../auth/useAuth'
 import { nestedLabel, resourceConfigs, type ResourceName } from './resource-config'
@@ -57,6 +57,7 @@ export default function ResourceListPage({ resource }: { resource: ResourceName 
   return (
     <section className="portal-library-view" aria-labelledby={`${resource}-heading`}>
       <div className="workspace-view-heading"><div><span>{config.eyebrow}</span><h2 id={`${resource}-heading`}>{config.title}</h2><p>{config.copy}</p></div><span className="workspace-live-chip"><config.Icon size={14} /> {query.rows.length} records</span></div>
+      {resource === 'contracts' ? <ComingSoonBanner title="DocuSign contract delivery is paused for this release" copy="Contract records remain visible, but envelope creation, signing, webhooks, and signed-PDF retrieval will be enabled in a later iteration." /> : null}
       <div className="resource-toolbar">
         <label className="workspace-search"><Search size={16} /><span className="sr-only">Search {resource}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${resource}`} /></label>
         <label className="resource-status-filter"><span>Status</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">All statuses</option>{statuses.map((item) => <option key={item} value={item}>{item.replaceAll('_', ' ')}</option>)}</select></label>

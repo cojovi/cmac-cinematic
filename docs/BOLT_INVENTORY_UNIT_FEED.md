@@ -1,8 +1,12 @@
 # Bolt-Data contract request: available mini-home units
 
+> **Deferred for a later iteration.** The current portal will continue using its existing mock model cards and mock imagery for per-unit selection. Only the aggregate inventory count is live today.
+
 ## Purpose
 
 The CMAC Sales Portal currently reads only the aggregate `public.mini_homes_inventory` view through the server-only `/api/inventory` function. Model cards are intentionally provided by a mock `InventoryProvider` and cannot become legal or sold unit references.
+
+This proposed feed concerns operational unit IDs, availability, and status—not product images. The existing mock images remain acceptable for the current release. A future visual upgrade may add an approved, non-sensitive image URL contract separately, but images are not required for the first Bolt unit-feed migration.
 
 To move individual unit selection to Bolt-Data, publish a stable, read-only `public.mini_homes_available_units` view in the separate Bolt-Data Supabase project. The CRM must not query raw Bolt tables, call ECI Bolt, or reproduce aggregate counting logic.
 
@@ -53,6 +57,8 @@ The view must exclude customer names, emails, phone numbers, street addresses, r
 - Existing deal references retain their recorded external ID and source timestamp for auditability.
 
 ## Provider migration
+
+The following steps are intentionally postponed while mock cards and imagery remain in use.
 
 1. Publish and permission-test the view in Bolt-Data.
 2. Add a server-only Vercel function that reads exactly this view with the existing Bolt service-role secret.

@@ -29,7 +29,7 @@ export default function DashboardPage() {
     { label: 'Assigned leads', value: leads.rows.filter((row) => !['converted', 'lost', 'archived'].includes(String(row.status))).length, note: `${leads.rows.filter((row) => row.status === 'new').length} waiting for first touch`, Icon: TrendingUp },
     { label: 'Follow-ups due', value: dueNow.length, note: `${openTasks.length} total open`, Icon: CalendarDays },
     { label: 'Open quotes', value: quotes.rows.filter((row) => !['accepted', 'declined', 'expired', 'cancelled'].includes(String(row.status))).length, note: 'Portal records · manual status', Icon: ReceiptText },
-    { label: 'Contracts active', value: contracts.rows.filter((row) => !['completed', 'declined', 'voided', 'error'].includes(String(row.status))).length, note: `${unitSales.rows.length} units attributed`, Icon: FileSignature },
+    { label: 'Contract records', value: contracts.rows.length, note: 'DocuSign integration coming soon', Icon: FileSignature },
   ]
 
   return (
@@ -55,7 +55,7 @@ export default function DashboardPage() {
           <div className="workspace-card-heading"><div><span>WORKSPACE / SHORTCUTS</span><h3>Move the work forward</h3></div><PackageCheck size={21} /></div>
           <Link to="/employee-portal/leads"><UsersRound size={16} /><span>Review assigned leads</span></Link>
           <Link to="/employee-portal/inventory"><PackageCheck size={16} /><span>Check available inventory</span></Link>
-          <Link to="/employee-portal/contracts"><FileSignature size={16} /><span>Resolve contract attention</span></Link>
+          <Link to="/employee-portal/contracts"><FileSignature size={16} /><span>View contract roadmap</span></Link>
         </article>
       </div>
     </section>
