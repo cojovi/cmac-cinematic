@@ -8,7 +8,7 @@ The application is production-capable but intentionally reports external service
 | --- | --- | --- |
 | Dedicated CRM Supabase | Deployed | `cmac_crm` (`gxiluyvhrrctslnhjkmc`) has the CRM schema, RLS, private Storage buckets, legacy-contact archive, and database hardening migrations. |
 | Google service account | Locally validated | JSON and `.env` identity, client ID, and private key match; the key parses successfully. |
-| Google employee sign-in | Provider active; first admin pending | The Web OAuth client is enabled in Supabase Auth, production/local callbacks are allowlisted, and the authorization endpoint redirects to Google. Bootstrap the first real CMAC administrator before enabling protected signups. |
+| Google employee sign-in | Provider and allowlist hook active; first admin pending | The Web OAuth client, production/local callbacks, and `private.before_user_created_hook` are active. Bootstrap the first real CMAC administrator before enabling protected signups. |
 | Bolt-Data aggregate | Validated | The configured project and key return HTTP 200 with the expected aggregate schema. |
 | Lead intake hashing | Active | Uses the built-in server-only service-role secret as its HMAC salt; an optional dedicated `LEAD_RATE_LIMIT_SECRET` can be supplied for independent rotation. |
 | CRM Edge Functions | Partially deployed | `submit-lead`, `admin-manage-employee`, `complete-unit-sale`, and `send-marketing-email` are active. Provider-dependent calls report not configured until their secrets are supplied. |
@@ -58,7 +58,7 @@ The checked-in application uses two separate Google integrations:
    - `http://localhost:5173/auth/callback`
 
 6. Bootstrap the first administrator allowlist row.
-7. Enable signups and configure the Before User Created hook at `pg-functions://postgres/private/before_user_created_hook`. The hook admits only active, allowlisted `@cmaccontainers.com` Google identities.
+7. The Before User Created hook is configured at `pg-functions://postgres/private/before_user_created_hook`. After bootstrapping the first administrator, enable signups; the hook admits only active, allowlisted `@cmaccontainers.com` Google identities.
 8. Request identity only: OpenID, email, and profile.
 9. Confirm an unlisted CMAC account and every non-CMAC account are rejected.
 
