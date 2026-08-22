@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
-import handler, { type ApiRequest, type ApiResponse } from './inventory'
+import handler, { type ApiRequest, type ApiResponse } from '../../api/inventory'
 
 vi.mock('@supabase/supabase-js', () => ({ createClient: vi.fn() }))
 
