@@ -10,7 +10,7 @@ The application is production-capable but intentionally reports external service
 | Google service account | Locally validated | JSON and `.env` identity, client ID, and private key match; the key parses successfully. |
 | Google employee sign-in | Blocked on OAuth web client and first admin identity | Google is currently disabled in Supabase Auth. The available `client_secret_GAM_MacPro...json` is an installed-app credential and cannot be used for hosted web login. |
 | Bolt-Data aggregate | Validated | The configured project and key return HTTP 200 with the expected aggregate schema. |
-| Lead intake secret | Missing | Add a random `LEAD_RATE_LIMIT_SECRET` of at least 32 characters before enabling live public submissions. |
+| Lead intake hashing | Active | Uses the built-in server-only service-role secret as its HMAC salt; an optional dedicated `LEAD_RATE_LIMIT_SECRET` can be supplied for independent rotation. |
 | CRM Edge Functions | Partially deployed | `submit-lead`, `admin-manage-employee`, `complete-unit-sale`, and `send-marketing-email` are active. Provider-dependent calls report not configured until their secrets are supplied. |
 | Vercel | Public production alias active | Vercel Authentication was removed from the project so the public site and CMAC auth boundary are reachable at `https://cmac-cinematic.vercel.app`. |
 | DocuSign | Deferred | The portal presents a Coming Soon state and no envelope action is deployed for this release. |
@@ -108,7 +108,7 @@ Configure the Connect webhook at `/functions/v1/docusign-webhook` with HMAC enab
 
 ## 6. Public lead intake
 
-Set `LEAD_RATE_LIMIT_SECRET` to a cryptographically random value of at least 32 characters and `ALLOWED_ORIGINS` to the comma-separated production and approved preview origins. The hosted function is deployed but intentionally returns HTTP 503 until the secret exists. It hashes network/email rate-limit identifiers, never stores raw IP addresses, suppresses rapid duplicates, preserves active owners, and uses transaction-safe round-robin assignment.
+The function hashes network/email rate-limit identifiers with a server-only HMAC salt, never stores raw IP addresses, suppresses rapid duplicates, preserves active owners, and uses transaction-safe round-robin assignment. By default it uses Supabase's built-in `SUPABASE_SERVICE_ROLE_KEY` as that salt; set an optional cryptographically random `LEAD_RATE_LIMIT_SECRET` of at least 32 characters if independent salt rotation is preferred. Set `ALLOWED_ORIGINS` to the comma-separated production and approved preview origins.
 
 ## 7. Vercel deployment
 

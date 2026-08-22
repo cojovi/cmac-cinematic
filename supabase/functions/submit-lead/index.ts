@@ -26,7 +26,11 @@ Deno.serve(async (request) => {
     const timing = clean(input.timing, 80)
     if (name.length < 2 || phone.length < 7 || !validEmail(email) || !projectType || location.length < 2 || !timing) return json(request, { error: 'Review the submitted fields.' }, 422)
 
+    // A dedicated salt may be supplied, but Supabase's built-in service-role
+    // secret is an equally server-only fallback. This keeps public intake
+    // available without ever storing raw network or email identifiers.
     const secret = Deno.env.get('LEAD_RATE_LIMIT_SECRET')?.trim()
+      || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim()
     if (!secret || secret.length < 32) return json(request, { error: 'Lead intake is not configured.' }, 503)
     const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('cf-connecting-ip') || 'unknown'
     const [ipHash, emailHash] = await Promise.all([hashIdentifier(forwarded, secret), hashIdentifier(email, secret)])
