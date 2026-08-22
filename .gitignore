@@ -18,6 +18,7 @@ test-results
 .env*
 !.env.example
 cmac-open-project-*.json
+client_secret_*.json
 
 # Editor directories and files
 .vscode/*

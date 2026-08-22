@@ -8,7 +8,7 @@ The application is production-capable but intentionally reports external service
 | --- | --- | --- |
 | Dedicated CRM Supabase | Deployed | `cmac_crm` (`gxiluyvhrrctslnhjkmc`) has the CRM schema, RLS, private Storage buckets, legacy-contact archive, and database hardening migrations. |
 | Google service account | Locally validated | JSON and `.env` identity, client ID, and private key match; the key parses successfully. |
-| Google employee sign-in | Blocked on OAuth web client and first admin identity | Google is currently disabled in Supabase Auth. The available `client_secret_GAM_MacPro...json` is an installed-app credential and cannot be used for hosted web login. |
+| Google employee sign-in | Provider active; first admin pending | The Web OAuth client is enabled in Supabase Auth, production/local callbacks are allowlisted, and the authorization endpoint redirects to Google. Bootstrap the first real CMAC administrator before enabling protected signups. |
 | Bolt-Data aggregate | Validated | The configured project and key return HTTP 200 with the expected aggregate schema. |
 | Lead intake hashing | Active | Uses the built-in server-only service-role secret as its HMAC salt; an optional dedicated `LEAD_RATE_LIMIT_SECRET` can be supplied for independent rotation. |
 | CRM Edge Functions | Partially deployed | `submit-lead`, `admin-manage-employee`, `complete-unit-sale`, and `send-marketing-email` are active. Provider-dependent calls report not configured until their secrets are supplied. |
