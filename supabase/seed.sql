@@ -1,0 +1,2 @@
+-- Production starts empty. Test identities and records are created by the
+-- pgTAP and browser fixtures so no employee or customer PII is committed.

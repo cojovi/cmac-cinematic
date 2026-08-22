@@ -7,18 +7,27 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run src api",
+    "test:watch": "vitest src api",
+    "test:e2e": "playwright test",
+    "db:start": "npx supabase@2.109.1 start --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector",
+    "db:reset": "npx supabase@2.109.1 db reset --local",
+    "db:test": "psql 'postgresql://postgres:postgres@127.0.0.1:55322/postgres' -v ON_ERROR_STOP=1 -f 'supabase/tests/production_crm.test.sql'",
     "preview": "vite preview",
     "screenshot": "node scripts/screenshot.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.112.3",
     "@tailwindcss/vite": "^4.3.0",
     "d3-geo": "^3.1.1",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-router-dom": "7.18.2",
     "tailwindcss": "^4.3.0",
     "topojson-client": "^3.1.0",
-    "us-atlas": "^3.0.1"
+    "us-atlas": "^3.0.1",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -35,6 +44,7 @@
     "playwright": "^1.60.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "4.1.11"
   }
 }

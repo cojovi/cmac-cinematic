@@ -1,48 +1,72 @@
-import { useCallback, useEffect, useState } from 'react'
-import ContainerHomesPage from './pages/ContainerHomesPage'
-import ClientComingSoonPage from './pages/ClientComingSoonPage'
-import EmployeePortalPage from './pages/EmployeePortalPage'
-import LoginPage from './pages/LoginPage'
+import { lazy, Suspense, useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { RequireAdmin, RequireEmployee } from './auth/RouteGuards'
 
-type AppRoute = 'home' | 'login' | 'employee' | 'client'
+const ContainerHomesPage = lazy(() => import('./pages/ContainerHomesPage'))
+const ClientComingSoonPage = lazy(() => import('./pages/ClientComingSoonPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
+const EmployeePortalLayout = lazy(() => import('./layouts/EmployeePortalLayout'))
+const DashboardPage = lazy(() => import('./pages/portal/DashboardPage'))
+const ResourceListPage = lazy(() => import('./pages/portal/ResourceListPage'))
+const ResourceDetailPage = lazy(() => import('./pages/portal/ResourceDetailPage'))
+const InventoryPage = lazy(() => import('./pages/portal/InventoryPage'))
+const NewSalePage = lazy(() => import('./pages/portal/NewSalePage'))
+const MarketingPage = lazy(() => import('./pages/portal/MarketingPage'))
+const DocumentsPage = lazy(() => import('./pages/portal/DocumentsPage'))
+const EmployeesAdminPage = lazy(() => import('./pages/portal/EmployeesAdminPage'))
+const MarketingAdminPage = lazy(() => import('./pages/portal/MarketingAdminPage'))
 
-const routeByPath: Record<string, AppRoute> = {
-  '/': 'home',
-  '/login': 'login',
-  '/employee-portal': 'employee',
-  '/client-portal': 'client',
+function PublicHome() {
+  const navigate = useNavigate()
+  return <ContainerHomesPage onRouteNavigate={(path) => navigate(path)} />
 }
 
-function routeForPath(pathname: string): AppRoute {
-  return routeByPath[pathname.replace(/\/$/, '') || '/'] ?? 'home'
+function ClientPortal() {
+  const navigate = useNavigate()
+  return <ClientComingSoonPage onNavigate={(path) => navigate(path)} />
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname])
+
+  return null
 }
 
 export default function App() {
-  const [route, setRoute] = useState<AppRoute>(() => routeForPath(window.location.pathname))
-
-  useEffect(() => {
-    if (!routeByPath[window.location.pathname.replace(/\/$/, '') || '/']) {
-      window.history.replaceState({}, '', '/')
-    }
-
-    const handlePopState = () => setRoute(routeForPath(window.location.pathname))
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
-
-  const navigate = useCallback((path: string) => {
-    const normalizedPath = path.replace(/\/$/, '') || '/'
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur()
-    }
-    window.history.pushState({}, '', normalizedPath)
-    setRoute(routeForPath(normalizedPath))
-    window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [])
-
-  if (route === 'login') return <LoginPage onNavigate={navigate} />
-  if (route === 'employee') return <EmployeePortalPage onNavigate={navigate} />
-  if (route === 'client') return <ClientComingSoonPage onNavigate={navigate} />
-
-  return <ContainerHomesPage onRouteNavigate={navigate} />
+  return (
+    <Suspense fallback={<main className="route-guard-state" aria-live="polite"><span>CMAC / LOADING</span><h1>Opening workspace</h1></main>}><ScrollToTop /><Routes>
+      <Route path="/" element={<PublicHome />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/client-portal" element={<ClientPortal />} />
+      <Route element={<RequireEmployee />}>
+        <Route path="/employee-portal" element={<EmployeePortalLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="leads" element={<ResourceListPage resource="leads" />} />
+          <Route path="leads/:leadId" element={<ResourceDetailPage resource="leads" />} />
+          <Route path="customers" element={<ResourceListPage resource="customers" />} />
+          <Route path="customers/:contactId" element={<ResourceDetailPage resource="customers" />} />
+          <Route path="tasks" element={<ResourceListPage resource="tasks" />} />
+          <Route path="inventory" element={<InventoryPage />} />
+          <Route path="marketing" element={<MarketingPage />} />
+          <Route path="sales/new" element={<NewSalePage />} />
+          <Route path="deals" element={<ResourceListPage resource="deals" />} />
+          <Route path="deals/:dealId" element={<ResourceDetailPage resource="deals" />} />
+          <Route path="quotes" element={<ResourceListPage resource="quotes" />} />
+          <Route path="contracts" element={<ResourceListPage resource="contracts" />} />
+          <Route path="documents" element={<DocumentsPage />} />
+          <Route element={<RequireAdmin />}>
+            <Route path="admin/employees" element={<EmployeesAdminPage />} />
+            <Route path="admin/marketing" element={<MarketingAdminPage />} />
+          </Route>
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes></Suspense>
+  )
 }

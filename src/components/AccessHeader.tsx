@@ -20,7 +20,7 @@ export function AccessHeader({
       <Logo onNavigate={onNavigate} />
       <div className="access-header-actions">
         <ThemeToggle />
-        <span className="demo-chip"><ShieldCheck size={14} aria-hidden="true" /> Demo environment</span>
+        <span className="demo-chip"><ShieldCheck size={14} aria-hidden="true" /> Secure access</span>
         <a
           className="access-back"
           href={backPath}

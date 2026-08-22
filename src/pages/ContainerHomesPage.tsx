@@ -25,6 +25,8 @@ import {
 import { SiteHeader } from '../components/SiteHeader'
 import { ServiceAreaMap } from '../components/ServiceAreaMap'
 import { IconBox, Logo, RedButton } from '../components/ui'
+import { publicLeadSchema } from '../lib/lead-validation'
+import { supabase } from '../lib/supabase'
 
 const trustBadges = [
   { title: 'TEXAS BUILT', detail: 'Crafted in the Lone Star State', Icon: MapPinned },
@@ -131,7 +133,8 @@ const initialForm: ConsultationForm = {
 export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigate: (path: string) => void }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
-  const [formStatus, setFormStatus] = useState('')
+  const [formStatus, setFormStatus] = useState<{ type: 'idle' | 'submitting' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' })
+  const [website, setWebsite] = useState('')
 
   useEffect(() => {
     document.title = 'CMAC Container Homes | Texas-Built Modular Living'
@@ -146,14 +149,27 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
     setForm((current) => ({ ...current, [field]: value }))
   }
 
-  function submitConsultation(event: FormEvent<HTMLFormElement>) {
+  async function submitConsultation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const subject = encodeURIComponent(`Container home consultation — ${form.name}`)
-    const body = encodeURIComponent(
-      `Name: ${form.name}\nPhone: ${form.phone}\nEmail: ${form.email}\nProject type: ${form.projectType}\nProject location: ${form.location}\nTiming: ${form.timing}`,
-    )
-    setFormStatus('Opening a prefilled message in your email app…')
-    window.location.href = `mailto:info@cmaccontainers.com?subject=${subject}&body=${body}`
+    const parsed = publicLeadSchema.safeParse({ ...form, website })
+    if (!parsed.success) {
+      setFormStatus({ type: 'error', message: parsed.error.issues[0]?.message ?? 'Review the highlighted information and try again.' })
+      return
+    }
+    if (!supabase) {
+      setFormStatus({ type: 'error', message: 'Online inquiries are not configured yet. Please call (469) 886-8944.' })
+      return
+    }
+    setFormStatus({ type: 'submitting', message: 'Sending your project details securely…' })
+    const { data, error } = await supabase.functions.invoke('submit-lead', { body: parsed.data })
+    const accepted = (data as { accepted?: boolean } | null)?.accepted
+    if (error || !accepted) {
+      setFormStatus({ type: 'error', message: 'We could not submit your inquiry. Please try again or call (469) 886-8944.' })
+      return
+    }
+    setForm(initialForm)
+    setWebsite('')
+    setFormStatus({ type: 'success', message: 'Thank you — your project is in our sales queue. A CMAC representative will follow up.' })
   }
 
   return (
@@ -191,6 +207,7 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
             </div>
 
             <form id="consultation" className="consultation-card" onSubmit={submitConsultation}>
+              <label className="form-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label>
               <div className="form-heading">
                 <span className="section-index">START / 01</span>
                 <h2>Tell us what you’re building.</h2>
@@ -236,9 +253,9 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
                   </select>
                 </label>
               </div>
-              <button className="form-submit" type="submit">Start My Project <ArrowRight size={16} aria-hidden="true" /></button>
-              <small>Opens a prefilled message to the CMAC team. No obligation.</small>
-              <p className="form-status" aria-live="polite">{formStatus}</p>
+              <button className="form-submit" type="submit" disabled={formStatus.type === 'submitting'}>{formStatus.type === 'submitting' ? 'Submitting…' : 'Start My Project'} <ArrowRight size={16} aria-hidden="true" /></button>
+              <small>Sent securely to the CMAC sales queue. No obligation.</small>
+              <p className={`form-status form-status-${formStatus.type}`} role={formStatus.type === 'error' ? 'alert' : 'status'} aria-live="polite">{formStatus.message}</p>
             </form>
 
             <div className="trust-row">
