@@ -1,12 +1,31 @@
-import { Navigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 import { LoaderCircle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
+import { providerErrorFromSearch } from '../lib/auth-flow'
 
 export default function AuthCallbackPage() {
-  const { session, employee, loading, error: authError } = useAuth()
-  const params = new URLSearchParams(window.location.search)
-  const providerError = params.get('error_description') ?? params.get('error')
-  const error = providerError ?? (!loading ? authError : null)
+  const { search } = useLocation()
+  const { session, employee, loading, error: authError, completeOAuthSignIn } = useAuth()
+  const started = useRef(false)
+  const providerError = providerErrorFromSearch(search)
+  const code = new URLSearchParams(search).get('code')
+
+  useEffect(() => {
+    if (providerError || !code) return
+
+    if (started.current) return
+    started.current = true
+
+    void completeOAuthSignIn(code).then((completed) => {
+      if (completed) window.history.replaceState(window.history.state, '', '/auth/callback')
+    })
+  }, [code, completeOAuthSignIn, providerError])
+
+  const missingResponseError = !code && !providerError && !loading && !session
+    ? 'Google did not return a valid sign-in response. Please try again.'
+    : null
+  const error = providerError ?? missingResponseError ?? (!loading ? authError : null)
 
   if (!loading && session && employee) return <Navigate to="/employee-portal" replace />
 

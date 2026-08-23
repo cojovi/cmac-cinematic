@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import { googleProviderIsEnabled, isSupabaseConfigured, localPortalPreviewEnabled, supabase } from '../lib/supabase'
+import { authCallbackUrl } from '../lib/auth-flow'
+import { exchangeOAuthCode, googleProviderIsEnabled, isSupabaseConfigured, localPortalPreviewEnabled, supabase } from '../lib/supabase'
 import type { EmployeeRow } from '../lib/database.types'
 import { AuthContext } from './auth-context'
 
@@ -97,12 +98,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: authCallbackUrl(window.location.origin),
         scopes: 'openid email profile',
       },
     })
     if (oauthError) setError(oauthError.message)
   }, [googleProviderStatus])
+
+  const completeOAuthSignIn = useCallback(async (code: string) => {
+    setError(null)
+    setLoading(true)
+
+    try {
+      const { data, error: exchangeError } = await exchangeOAuthCode(code)
+      if (exchangeError || !data.session) {
+        setSession(null)
+        setEmployee(null)
+        setError(exchangeError?.message ?? 'Google did not return a valid employee session.')
+        setLoading(false)
+        return false
+      }
+
+      setSession(data.session)
+      await loadEmployee(data.session)
+      return true
+    } catch (exchangeError) {
+      setSession(null)
+      setEmployee(null)
+      setError(exchangeError instanceof Error ? exchangeError.message : 'Google sign-in could not be completed.')
+      setLoading(false)
+      return false
+    }
+  }, [loadEmployee])
 
   const signOut = useCallback(async () => {
     if (supabase) await supabase.auth.signOut()
@@ -123,9 +150,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     previewMode: localPortalPreviewEnabled,
     error,
     signInWithGoogle,
+    completeOAuthSignIn,
     signOut,
     refreshEmployee,
-  }), [session, employee, loading, googleProviderStatus, error, signInWithGoogle, signOut, refreshEmployee])
+  }), [session, employee, loading, googleProviderStatus, error, signInWithGoogle, completeOAuthSignIn, signOut, refreshEmployee])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

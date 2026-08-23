@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { RequireAdmin, RequireEmployee } from './auth/RouteGuards'
+import { useAuth } from './auth/useAuth'
+import { authCallbackRoute, hasOAuthResponse } from './lib/auth-flow'
 
 const ContainerHomesPage = lazy(() => import('./pages/ContainerHomesPage'))
 const ClientComingSoonPage = lazy(() => import('./pages/ClientComingSoonPage'))
@@ -19,6 +21,20 @@ const MarketingAdminPage = lazy(() => import('./pages/portal/MarketingAdminPage'
 
 function PublicHome() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { employee, session, loading, previewMode } = useAuth()
+
+  // Supabase falls back to the configured Site URL when an environment-specific
+  // callback is not allow-listed. Preserve that OAuth response and finish it on
+  // the dedicated callback route instead of showing the public site.
+  if (hasOAuthResponse(location.search)) {
+    return <Navigate to={authCallbackRoute(location.search)} replace />
+  }
+
+  if (!loading && employee && (session || previewMode)) {
+    return <Navigate to="/employee-portal" replace />
+  }
+
   return <ContainerHomesPage onRouteNavigate={(path) => navigate(path)} />
 }
 

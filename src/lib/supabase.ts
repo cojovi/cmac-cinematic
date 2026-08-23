@@ -12,10 +12,28 @@ export const supabase: SupabaseClient<Database> | null = isSupabaseConfigured
         flowType: 'pkce',
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        // The dedicated callback page performs the PKCE exchange. Keeping this
+        // explicit prevents the client from consuming the code before routing
+        // and briefly rendering the public homepage.
+        detectSessionInUrl: false,
       },
     })
   : null
+
+let pendingCodeExchange: {
+  code: string
+  request: ReturnType<NonNullable<typeof supabase>['auth']['exchangeCodeForSession']>
+} | null = null
+
+export function exchangeOAuthCode(code: string) {
+  if (!supabase) throw new Error('Employee sign-in is not configured in this environment.')
+
+  if (pendingCodeExchange?.code === code) return pendingCodeExchange.request
+
+  const request = supabase.auth.exchangeCodeForSession(code)
+  pendingCodeExchange = { code, request }
+  return request
+}
 
 export async function googleProviderIsEnabled() {
   if (!supabaseUrl || !publishableKey) return false

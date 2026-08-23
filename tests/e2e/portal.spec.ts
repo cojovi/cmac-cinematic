@@ -47,6 +47,15 @@ test('production login is Google-only and requests the correct callback', async 
   expect(authorizeUrl.searchParams.get('redirect_to')).toBe('http://127.0.0.1:4174/auth/callback')
 })
 
+test('an OAuth response sent to the site root is recovered by the callback route', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4174/?error=access_denied&error_description=Workspace+access+denied')
+
+  await expect(page).toHaveURL(/\/auth\/callback\?error=access_denied/)
+  await expect(page.getByRole('heading', { name: 'Sign-in could not be completed' })).toBeVisible()
+  await expect(page.getByText('Workspace access denied')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Container Homes', level: 1 })).toHaveCount(0)
+})
+
 test('disabled Google provider is contained in the login UI', async ({ page }) => {
   await page.route('https://*/auth/v1/settings', (route) => route.fulfill({
     status: 200,

@@ -3,6 +3,20 @@ import { publicLeadSchema, splitName } from './lead-validation'
 import { mockInventoryProvider } from './inventory-provider'
 import { quoteTotal, normalizeOperationalStatus } from './sales-utils'
 import { isInventoryStale } from '../hooks/useInventorySummary'
+import { authCallbackRoute, authCallbackUrl, hasOAuthResponse, providerErrorFromSearch } from './auth-flow'
+
+describe('OAuth callback routing', () => {
+  it('moves root-level OAuth responses to the dedicated callback without losing parameters', () => {
+    expect(hasOAuthResponse('?code=one-time-code')).toBe(true)
+    expect(authCallbackRoute('?code=one-time-code&next=portal')).toBe('/auth/callback?code=one-time-code&next=portal')
+    expect(hasOAuthResponse('?utm_source=campaign')).toBe(false)
+  })
+
+  it('builds an exact callback URL and surfaces provider errors', () => {
+    expect(authCallbackUrl('https://cmac-cinematic.vercel.app/')).toBe('https://cmac-cinematic.vercel.app/auth/callback')
+    expect(providerErrorFromSearch('?error=access_denied&error_description=Workspace+access+denied')).toBe('Workspace access denied')
+  })
+})
 
 describe('public lead validation', () => {
   const valid = { name: 'Taylor Morgan', phone: '(512) 555-0184', email: 'Taylor@Example.com', projectType: 'Container home', location: 'Austin, TX', timing: '1–3 months', website: '' }
