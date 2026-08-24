@@ -199,7 +199,7 @@ Verification target: browser screenshot at `974px` viewport width, desktop compo
 - Shared header component switches nav/CTA copy by variant.
 
 ### Header
-- Roofing nav now includes **Mini-Homes** linking to `/mini-homes`.
+- Roofing nav **Mini-Homes** links to the Mini-Homes Vercel preview (`https://cmac-cinematic-git-minihomes-cojovis-projects.vercel.app/`), not the in-app `/mini-homes` route.
 - Mini-Homes nav uses mockup labels: Models, Our Process, About Us, Gallery, Resources, Contact.
 - Mini-Homes phone/CTA: `(831) 262-3222`, Request Consultation.
 
@@ -218,3 +218,8 @@ Mirrors roofing section rhythm with container-specific content sourced from `min
 
 ### Assets
 - `public/minihomes-hero.png` — clean text-free container home photo (1024×438). Full-bleed hero background with left/right readability gradients. Never use a UI mockup export that contains baked-in headline or form artwork.
+
+## Session: Mini-Homes Nav + Favicon (2026-08-24)
+
+- Header **Mini-Homes** is an external link to the Mini-Homes Vercel deployment.
+- Browser tab icon is the red house/broken-chain mark (`public/favicon.png`, `favicon-32.png`, `apple-touch-icon.png`), replacing the previous purple Vite SVG.

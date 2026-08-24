@@ -1,5 +1,4 @@
 import { ChevronDown, Menu, Phone } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { Logo } from './ui'
 
 type SiteHeaderProps = {
@@ -43,15 +42,12 @@ export function SiteHeader({ variant, menuOpen, onMenuToggle }: SiteHeaderProps)
             {dropdown ? <ChevronDown size={10} /> : null}
           </a>
         ))}
-        {variant === 'roofing' ? (
-          <Link className="nav-route-link" to="/mini-homes">
-            Mini-Homes
-          </Link>
-        ) : (
-          <Link className="nav-route-link nav-route-link-active" to="/mini-homes">
-            Mini-Homes
-          </Link>
-        )}
+        <a
+          className="nav-route-link"
+          href="https://cmac-cinematic-git-minihomes-cojovis-projects.vercel.app/"
+        >
+          Mini-Homes
+        </a>
       </nav>
       <div className="nav-actions">
         <a className="phone-pill" href={`tel:${phone}`}>
