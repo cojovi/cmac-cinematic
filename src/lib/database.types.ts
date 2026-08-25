@@ -991,6 +991,15 @@ export type Database = {
         }
         Returns: Json
       }
+      manage_lead: {
+        Args: {
+          p_action: string
+          p_actor_employee_id: string
+          p_lead_id?: string
+          p_payload?: Json
+        }
+        Returns: Json
+      }
       process_contract_event: {
         Args: {
           p_envelope_id: string

@@ -357,6 +357,10 @@ button {
   background: #020405;
 }
 
+.hero-form-error {
+  min-height: 840px;
+}
+
 .container-hero-bg {
   position: absolute;
   z-index: -3;
@@ -570,6 +574,20 @@ button {
   border-color: rgba(236, 244, 248, 0.34);
 }
 
+.form-grid input.field-invalid,
+.form-grid select.field-invalid {
+  border-color: rgba(255, 92, 89, 0.9);
+  background: rgba(58, 12, 14, 0.64);
+  box-shadow: 0 0 0 3px rgba(242, 41, 41, 0.11);
+}
+
+.form-field-error {
+  color: #ffaaa8;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
 .form-submit {
   width: 100%;
   min-height: 48px;
@@ -593,7 +611,7 @@ button {
 
 .form-status {
   min-height: 14px;
-  margin: 6px 0 0;
+  margin: 10px 0 -7px;
   color: #f3b1b0;
   font-size: 10px;
   text-align: center;

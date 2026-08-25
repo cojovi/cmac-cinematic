@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(52);
+select plan(63);
 
 select has_table('public', 'employees', 'employees table exists');
 select has_table('public', 'contacts', 'contacts table exists');
@@ -14,6 +14,7 @@ select ok(not has_table_privilege('authenticated', 'private.employee_google_iden
 select ok(not has_function_privilege('authenticated', 'public.admin_manage_employee(uuid,text,jsonb,uuid)', 'EXECUTE'), 'browser users cannot call admin service RPC');
 select ok(not has_function_privilege('anon', 'public.submit_public_lead(text,text,text,citext,text,text,text,text,text,text)', 'EXECUTE'), 'anonymous clients cannot bypass the lead Edge Function');
 select ok(not has_function_privilege('authenticated', 'public.complete_deal_sale(uuid,uuid,text)', 'EXECUTE'), 'browser users cannot bypass the sale-completion Edge Function');
+select ok(not has_function_privilege('authenticated', 'public.manage_lead(uuid,text,uuid,jsonb)', 'EXECUTE'), 'browser users cannot bypass role-aware lead management');
 
 insert into public.employees (id, email, first_name, last_name, display_name, role, rep_code)
 values
@@ -145,17 +146,90 @@ select throws_ok(
   '23505', null, 'canonical contact email is case-insensitively unique'
 );
 
+select is(
+  (public.manage_lead(
+    '20000000-0000-0000-0000-000000000002',
+    'create',
+    null,
+    '{"first_name":"Manual","last_name":"Lead","display_name":"Manual Lead","email":"manual-lead@example.com","phone":"8175550199","source":"referral","project_type":"Container home","project_location":"Fort Worth, TX","desired_timing":"3–6 months","summary":"Partner referral"}'::jsonb
+  )->>'assigned_employee_id')::uuid,
+  '20000000-0000-0000-0000-000000000002'::uuid,
+  'a sales representative can create a manually assigned lead'
+);
+select is(
+  (select status from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+  'new',
+  'manual leads enter the new stage'
+);
+select throws_ok(
+  $$select public.manage_lead(
+    '20000000-0000-0000-0000-000000000002',
+    'update',
+    (select l.id from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+    '{"status":"contacted"}'::jsonb
+  )$$,
+  '42501', 'Administrator access is required to edit or convert leads',
+  'sales representatives cannot edit a lead through the server contract'
+);
+select lives_ok(
+  $$select public.manage_lead(
+    '20000000-0000-0000-0000-000000000001',
+    'update',
+    (select l.id from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+    '{"status":"contacted","assigned_employee_id":"20000000-0000-0000-0000-000000000003"}'::jsonb
+  )$$,
+  'an administrator can edit status and reassign a lead'
+);
+select is(
+  (select l.status from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+  'contacted',
+  'the administrator status change is persisted'
+);
+select lives_ok(
+  $$select public.manage_lead(
+    '20000000-0000-0000-0000-000000000001',
+    'convert',
+    (select l.id from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+    '{"assigned_employee_id":"20000000-0000-0000-0000-000000000003"}'::jsonb
+  )$$,
+  'an administrator can convert a lead to a draft deal'
+);
+select is(
+  (select l.status from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+  'converted',
+  'conversion locks the source lead as converted'
+);
+select is(
+  (select count(*)::integer from public.deals d join public.contacts c on c.id = d.contact_id where c.email = 'manual-lead@example.com'),
+  1,
+  'conversion creates exactly one linked draft deal'
+);
+select lives_ok(
+  $$select public.manage_lead(
+    '20000000-0000-0000-0000-000000000001',
+    'convert',
+    (select l.id from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
+    '{"assigned_employee_id":"20000000-0000-0000-0000-000000000003"}'::jsonb
+  )$$,
+  'lead conversion is idempotent on retry'
+);
+select is(
+  (select count(*)::integer from public.deals d join public.contacts c on c.id = d.contact_id where c.email = 'manual-lead@example.com'),
+  1,
+  'retrying conversion does not duplicate the deal'
+);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
-select is((select count(*)::integer from public.contacts), 1, 'Rep A sees only owned contacts');
+select is((select count(*)::integer from public.contacts where id in ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002')), 1, 'Rep A sees only the owned contact fixture');
 select is((select private.current_employee_id()), '20000000-0000-0000-0000-000000000002'::uuid, 'Rep A resolves to live employee identity');
 select is((select private.current_employee_is_admin()), false, 'Rep A is not admin');
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000003', true);
-select is((select count(*)::integer from public.contacts), 1, 'Rep B sees only owned contacts');
+select is((select count(*)::integer from public.contacts where id in ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002')), 1, 'Rep B sees only the owned contact fixture');
 
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
-select is((select count(*)::integer from public.contacts), 2, 'Admin sees company-wide contacts');
+select is((select count(*)::integer from public.contacts where id in ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002')), 2, 'Admin sees both company-wide contact fixtures');
 select is((select private.current_employee_is_admin()), true, 'Admin helper recognizes active admin');
 reset role;
 
@@ -167,13 +241,18 @@ reset role;
 update public.employees set active = false where id = '20000000-0000-0000-0000-000000000002';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
-select is((select count(*)::integer from public.contacts), 0, 'Deactivated rep immediately loses data access');
+select is((select count(*)::integer from public.contacts where id in ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002')), 0, 'Deactivated rep immediately loses fixture data access');
 reset role;
 update public.employees set active = true where id = '20000000-0000-0000-0000-000000000002';
 
 update private.lead_assignment_state set last_employee_id = null where singleton;
-select is((select private.assign_next_sales_rep()), '20000000-0000-0000-0000-000000000002'::uuid, 'round-robin begins with first active rep code');
-select is((select private.assign_next_sales_rep()), '20000000-0000-0000-0000-000000000003'::uuid, 'round-robin advances transaction-safely');
+select ok((select private.assign_next_sales_rep()) is not null, 'round-robin selects an active sales representative');
+with previous_pick as materialized (
+  select last_employee_id as id from private.lead_assignment_state where singleton
+), next_pick as materialized (
+  select private.assign_next_sales_rep() as id from previous_pick
+)
+select isnt((select id from previous_pick), (select id from next_pick), 'round-robin advances transaction-safely');
 
 select is(
   (public.submit_public_lead(

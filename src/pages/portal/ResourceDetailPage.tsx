@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, CalendarPlus, CheckCircle2, FileText, MessageSquarePlus, Save, ShieldCheck } from 'lucide-react'
 import { usePortalRows } from '../../hooks/usePortalRows'
 import { PortalEmpty, PortalError, PortalLoading } from '../../components/portal/AsyncState'
+import { LeadManagementPanel } from '../../components/portal/LeadManagementPanel'
 import { useAuth } from '../../auth/useAuth'
 import { supabase } from '../../lib/supabase'
 import type { PublicTableName, TablesInsert } from '../../lib/database.types'
@@ -17,18 +18,25 @@ export default function ResourceDetailPage({ resource }: { resource: DetailResou
   const params = useParams()
   const id = params[paramByResource[resource]] ?? ''
   const { employee, previewMode } = useAuth()
-  const recordQuery = usePortalRows(tableByResource[resource], { filter: { column: 'id', value: id } })
+  const recordQuery = usePortalRows(tableByResource[resource], {
+    filter: { column: 'id', value: id },
+    select: resource === 'leads'
+      ? '*,contacts(first_name,last_name,display_name,email,phone,project_address),assigned_employee:employees!leads_assigned_employee_id_fkey(display_name,rep_code)'
+      : '*',
+  })
   const activityFilter = resource === 'customers' ? 'contact_id' : resource === 'leads' ? 'lead_id' : 'deal_id'
   const activityQuery = usePortalRows('activities', { filter: { column: activityFilter, value: id }, orderBy: 'created_at', limit: 50 })
   const dealUnitsQuery = usePortalRows('deal_units', { filter: { column: 'deal_id', value: id }, orderBy: 'created_at', limit: 50 })
   const contractsQuery = usePortalRows('contracts', { filter: { column: 'deal_id', value: id }, orderBy: 'created_at', limit: 50 })
+  const linkedDealsQuery = usePortalRows('deals', { filter: { column: 'lead_id', value: id }, orderBy: 'created_at', limit: 1 })
   const [note, setNote] = useState('')
   const [taskTitle, setTaskTitle] = useState('')
   const [dueAt, setDueAt] = useState('')
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [overrideReason, setOverrideReason] = useState('')
   const record = recordQuery.rows[0]
-  const title = useMemo(() => String(record?.display_name ?? record?.deal_number ?? record?.project_type ?? 'Record'), [record])
+  const contact = record?.contacts && typeof record.contacts === 'object' && !Array.isArray(record.contacts) ? record.contacts as Record<string, unknown> : null
+  const title = useMemo(() => String(contact?.display_name ?? record?.display_name ?? record?.deal_number ?? record?.project_type ?? 'Record'), [contact?.display_name, record])
 
   async function addNote(event: FormEvent) {
     event.preventDefault()
@@ -71,17 +79,19 @@ export default function ResourceDetailPage({ resource }: { resource: DetailResou
     else { setActionMessage(String((data as { message?: string })?.message ?? 'Deal completion recorded.')); await recordQuery.reload() }
   }
 
-  if (recordQuery.loading || activityQuery.loading || dealUnitsQuery.loading || contractsQuery.loading) return <PortalLoading label="Opening record" />
-  if (recordQuery.error || activityQuery.error || dealUnitsQuery.error || contractsQuery.error) return <PortalError message={recordQuery.error ?? activityQuery.error ?? dealUnitsQuery.error ?? contractsQuery.error ?? 'Unable to open record.'} retry={() => void recordQuery.reload()} />
+  if (recordQuery.loading || activityQuery.loading || dealUnitsQuery.loading || contractsQuery.loading || linkedDealsQuery.loading) return <PortalLoading label="Opening record" />
+  if (recordQuery.error || activityQuery.error || dealUnitsQuery.error || contractsQuery.error || linkedDealsQuery.error) return <PortalError message={recordQuery.error ?? activityQuery.error ?? dealUnitsQuery.error ?? contractsQuery.error ?? linkedDealsQuery.error ?? 'Unable to open record.'} retry={() => void recordQuery.reload()} />
   if (!record) return <PortalEmpty title="Record not found" copy="It may have been removed or is outside your assigned RLS scope." />
 
   return (
     <section className="record-detail-page">
       <Link className="portal-text-button detail-back" to={`/employee-portal/${resource}`}><ArrowLeft size={15} /> Back to {resource}</Link>
-      <div className="record-hero"><div><span>{resource.toUpperCase()} / {id.slice(0, 8)}</span><h2>{title}</h2><p>{String(record.email ?? record.project_location ?? record.project_name ?? 'CMAC transaction record')}</p></div><span className={`status-pill status-${String(record.status ?? record.lifecycle_stage)}`}>{String(record.status ?? record.lifecycle_stage).replaceAll('_', ' ')}</span></div>
+      <div className="record-hero"><div><span>{resource.toUpperCase()} / {id.slice(0, 8)}</span><h2>{title}</h2><p>{String(contact?.email ?? record.email ?? record.project_location ?? record.project_name ?? 'CMAC transaction record')}</p></div><span className={`status-pill status-${String(record.status ?? record.lifecycle_stage)}`}>{String(record.status ?? record.lifecycle_stage).replaceAll('_', ' ')}</span></div>
       {previewMode ? <div className="configuration-state"><ShieldCheck size={17} /><div><strong>Local preview is read-only</strong><span>Connect Supabase and sign in to save timeline notes or follow-ups.</span></div></div> : null}
       {actionMessage ? <p className="record-action-message" role="status">{actionMessage}</p> : null}
       <div className="record-detail-grid">
+        {resource === 'leads' && employee?.role === 'admin' ? <LeadManagementPanel key={`${id}-${String(record.updated_at)}`} leadId={id} record={record} linkedDeal={linkedDealsQuery.rows[0]} onSaved={async () => { await Promise.all([recordQuery.reload(), activityQuery.reload()]) }} /> : null}
+        {resource === 'leads' && employee?.role !== 'admin' ? <div className="lead-permission-note lead-permission-wide"><ShieldCheck size={17} /><div><strong>Administrator-controlled record</strong><span>You can add notes and schedule follow-ups. Only an administrator can edit, reassign, change status, or convert this lead.</span></div></div> : null}
         <article className="workspace-card record-fields"><div className="workspace-card-heading"><div><span>RECORD / DETAILS</span><h3>Current information</h3></div><FileText size={20} /></div><dl>{Object.entries(record).filter(([key, value]) => !['id', 'contacts', 'metadata'].includes(key) && value !== null && typeof value !== 'object').slice(0, 14).map(([key, value]) => <div key={key}><dt>{key.replaceAll('_', ' ')}</dt><dd>{String(value)}</dd></div>)}</dl></article>
         <aside className="record-actions-stack">
           <form className="workspace-card record-action-form" onSubmit={addNote}><div className="workspace-card-heading"><div><span>TIMELINE / NOTE</span><h3>Add context</h3></div><MessageSquarePlus size={19} /></div><label><span>Note</span><textarea value={note} onChange={(event) => setNote(event.target.value)} rows={4} placeholder="Customer conversation, site context, or next step" required /></label><button className="portal-primary-button" disabled={previewMode} type="submit"><Save size={15} /> Save note</button></form>

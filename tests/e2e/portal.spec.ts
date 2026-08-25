@@ -3,6 +3,7 @@ import { expect, test } from 'playwright/test'
 const portalRoutes = [
   ['/employee-portal', /Good (morning|afternoon)/],
   ['/employee-portal/leads', 'Lead pipeline'],
+  ['/employee-portal/leads/new', 'Create a lead'],
   ['/employee-portal/customers', 'Contacts & customers'],
   ['/employee-portal/tasks', 'Follow-up queue'],
   ['/employee-portal/inventory', 'Availability & model selection'],
@@ -22,6 +23,17 @@ test('public landing and lead form render without overflow', async ({ page }) =>
   await expect(page).toHaveTitle('CMAC Container Homes | Texas-Built Modular Living')
   await expect(page.getByRole('heading', { name: 'Container Homes', level: 1 })).toBeVisible()
   await expect(page.getByLabel('Full name')).toBeVisible()
+
+  await page.getByLabel('Full name').fill('Testing Lead')
+  await page.getByLabel('Phone').fill('one')
+  await page.getByLabel('Email').fill('testing@example.com')
+  await page.getByLabel('Project type').selectOption({ label: 'Workforce housing' })
+  await page.getByLabel('Project location').fill('Haslet, TX')
+  await page.getByLabel('Ideal timing').selectOption({ label: '1–3 months' })
+  await page.getByRole('button', { name: 'Start My Project' }).click()
+  await expect(page.getByText('Enter a phone number with at least 7 digits.')).toBeVisible()
+  await expect(page.getByText('Please correct the highlighted fields, then submit again.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Start My Project' })).toBeEnabled()
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
@@ -77,6 +89,7 @@ test('direct employee routes refresh and interactive navigation works', async ({
   await search.fill('Avery')
   await expect(page.locator('.resource-row')).toHaveCount(1)
   await expect(page.getByText('Avery Brooks')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Add lead' })).toBeVisible()
 
   if ((testInfo.project.use.viewport?.width ?? 1440) <= 760) {
     await page.getByRole('button', { name: 'Open navigation' }).click()
@@ -89,6 +102,30 @@ test('direct employee routes refresh and interactive navigation works', async ({
   await expect(page.getByText('Inventory unavailable')).toBeVisible()
   await expect(page.getByText('MODEL REFERENCE / MOCK').first()).toBeVisible()
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
+})
+
+test('manual lead intake and admin lead controls are fully rendered', async ({ page }) => {
+  await page.goto('/employee-portal/leads/new')
+  await expect(page.getByRole('heading', { name: 'Create a lead' })).toBeVisible()
+  await page.getByLabel('First name *').fill('Morgan')
+  await page.getByLabel('Last name').fill('Sample')
+  await page.getByLabel('Email *').fill('morgan.sample@example.com')
+  await page.getByLabel('Phone *').fill('(817) 555-0199')
+  await page.getByLabel('Lead source *').selectOption('referral')
+  await page.getByLabel('Project type *').selectOption({ label: 'Container home' })
+  await page.getByLabel('Ideal timing *').selectOption({ label: '3–6 months' })
+  await page.getByLabel('Project location *').fill('Fort Worth, TX')
+  await page.getByRole('button', { name: 'Create lead' }).click()
+  await expect(page.getByText('Local preview only — the form is valid, but no lead was written to the CRM.')).toBeVisible()
+
+  await page.goto('/employee-portal/leads/preview-lead-2')
+  await expect(page.getByRole('heading', { name: 'Avery Brooks' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Edit, assign, and qualify' })).toBeVisible()
+  await expect(page.getByLabel('Pipeline status *')).toHaveValue('new')
+  await page.getByLabel('Pipeline status *').selectOption('contacted')
+  await page.getByRole('button', { name: 'Save lead' }).click()
+  await expect(page.getByText('Local preview only — the edit form is valid, but no CRM record was changed.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Convert to deal' })).toBeVisible()
 })
 
 test('every employee portal destination renders without horizontal overflow', async ({ page }) => {

@@ -283,6 +283,9 @@ uri = "pg-functions://postgres/private/before_user_created_hook"
 [functions.submit-lead]
 verify_jwt = false
 
+[functions.manage-lead]
+verify_jwt = true
+
 [functions.docusign-webhook]
 verify_jwt = false
 

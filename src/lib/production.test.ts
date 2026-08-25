@@ -4,6 +4,7 @@ import { mockInventoryProvider } from './inventory-provider'
 import { quoteTotal, normalizeOperationalStatus } from './sales-utils'
 import { isInventoryStale } from '../hooks/useInventorySummary'
 import { authCallbackRoute, authCallbackUrl, hasOAuthResponse, providerErrorFromSearch } from './auth-flow'
+import { leadFormSchema } from './lead-management'
 
 describe('OAuth callback routing', () => {
   it('moves root-level OAuth responses to the dedicated callback without losing parameters', () => {
@@ -24,8 +25,19 @@ describe('public lead validation', () => {
   it('rejects honeypot input and malformed email', () => {
     expect(publicLeadSchema.safeParse({ ...valid, website: 'bot' }).success).toBe(false)
     expect(publicLeadSchema.safeParse({ ...valid, email: 'nope' }).success).toBe(false)
+    expect(publicLeadSchema.safeParse({ ...valid, phone: 'one' }).success).toBe(false)
   })
   it('splits multi-part names without losing surnames', () => expect(splitName('Avery Van Buren')).toEqual({ firstName: 'Avery', lastName: 'Van Buren' }))
+})
+
+describe('employee lead validation', () => {
+  const valid = {
+    first_name: 'Taylor', last_name: 'Morgan', email: 'taylor@example.com', phone: '(512) 555-0184',
+    source: 'referral', status: 'qualified', project_type: 'Container home', project_location: 'Austin, TX',
+    desired_timing: '1–3 months', summary: '', lost_reason: '', assigned_employee_id: '20000000-0000-4000-8000-000000000002',
+  }
+  it('accepts a complete manually entered lead', () => expect(leadFormSchema.safeParse(valid).success).toBe(true))
+  it('requires a reason before a lead can be marked lost', () => expect(leadFormSchema.safeParse({ ...valid, status: 'lost' }).success).toBe(false))
 })
 
 describe('inventory contracts', () => {

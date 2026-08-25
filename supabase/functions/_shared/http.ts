@@ -10,8 +10,9 @@ export function corsHeaders(request: Request) {
   const configured = (Deno.env.get('ALLOWED_ORIGINS') ?? '').split(',').map((item) => item.trim()).filter(Boolean)
   const allowed = new Set([...defaultOrigins, ...configured])
   const origin = request.headers.get('origin') ?? ''
+  const isCmacVercelDeployment = /^https:\/\/cmac-cinematic(?:-[a-z0-9-]+)?(?:-cojovis-projects)?\.vercel\.app$/i.test(origin)
   return {
-    'Access-Control-Allow-Origin': allowed.has(origin) ? origin : defaultOrigins[0],
+    'Access-Control-Allow-Origin': allowed.has(origin) || isCmacVercelDeployment ? origin : defaultOrigins[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-docusign-signature-1',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',

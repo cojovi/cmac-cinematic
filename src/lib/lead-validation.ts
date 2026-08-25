@@ -2,7 +2,10 @@ import { z } from 'zod'
 
 export const publicLeadSchema = z.object({
   name: z.string().trim().min(2, 'Enter your full name.').max(120),
-  phone: z.string().trim().min(7, 'Enter a valid phone number.').max(40),
+  phone: z.string().trim().max(40).refine(
+    (value) => value.replace(/\D/g, '').length >= 7,
+    'Enter a phone number with at least 7 digits.',
+  ),
   email: z.string().trim().toLowerCase().email('Enter a valid email address.').max(254),
   projectType: z.string().trim().min(1, 'Select a project type.').max(80),
   location: z.string().trim().min(2, 'Enter the project location.').max(160),

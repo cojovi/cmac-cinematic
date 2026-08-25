@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   Box,
@@ -133,8 +133,10 @@ const initialForm: ConsultationForm = {
 export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigate: (path: string) => void }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [form, setForm] = useState(initialForm)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ConsultationForm, string>>>({})
   const [formStatus, setFormStatus] = useState<{ type: 'idle' | 'submitting' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' })
   const [website, setWebsite] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     document.title = 'CMAC Container Homes | Texas-Built Modular Living'
@@ -147,13 +149,25 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
 
   function updateField(field: keyof ConsultationForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
+    setFieldErrors((current) => ({ ...current, [field]: undefined }))
+    if (formStatus.type === 'error') setFormStatus({ type: 'idle', message: '' })
   }
 
   async function submitConsultation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const parsed = publicLeadSchema.safeParse({ ...form, website })
     if (!parsed.success) {
-      setFormStatus({ type: 'error', message: parsed.error.issues[0]?.message ?? 'Review the highlighted information and try again.' })
+      const nextErrors: Partial<Record<keyof ConsultationForm, string>> = {}
+      for (const issue of parsed.error.issues) {
+        const field = issue.path[0]
+        if (typeof field === 'string' && field in initialForm && !nextErrors[field as keyof ConsultationForm]) {
+          nextErrors[field as keyof ConsultationForm] = issue.message
+        }
+      }
+      setFieldErrors(nextErrors)
+      setFormStatus({ type: 'error', message: 'Please correct the highlighted fields, then submit again.' })
+      const firstField = Object.keys(nextErrors)[0]
+      if (firstField) formRef.current?.querySelector<HTMLElement>(`[name="${firstField}"]`)?.focus()
       return
     }
     if (!supabase) {
@@ -168,6 +182,7 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
       return
     }
     setForm(initialForm)
+    setFieldErrors({})
     setWebsite('')
     setFormStatus({ type: 'success', message: 'Thank you — your project is in our sales queue. A CMAC representative will follow up.' })
   }
@@ -184,7 +199,7 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
         />
 
         <main id="main-content">
-          <section id="home" className="hero hero-containers" aria-labelledby="hero-title">
+          <section id="home" className={`hero hero-containers${formStatus.type === 'error' ? ' hero-form-error' : ''}`} aria-labelledby="hero-title">
             <div className="container-hero-bg" aria-hidden="true" />
             <div className="blueprint-overlay" aria-hidden="true" />
             <div className="hero-copy">
@@ -206,7 +221,7 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
               </div>
             </div>
 
-            <form id="consultation" className="consultation-card" onSubmit={submitConsultation}>
+            <form ref={formRef} id="consultation" className="consultation-card" onSubmit={submitConsultation} noValidate>
               <label className="form-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label>
               <div className="form-heading">
                 <span className="section-index">START / 01</span>
@@ -216,19 +231,22 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
               <div className="form-grid">
                 <label>
                   <span>Full name</span>
-                  <input name="name" autoComplete="name" value={form.name} onChange={(event) => updateField('name', event.target.value)} required />
+                  <input className={fieldErrors.name ? 'field-invalid' : ''} aria-invalid={Boolean(fieldErrors.name)} aria-describedby={fieldErrors.name ? 'consultation-name-error' : undefined} name="name" autoComplete="name" value={form.name} onChange={(event) => updateField('name', event.target.value)} required />
+                  {fieldErrors.name ? <small className="form-field-error" id="consultation-name-error">{fieldErrors.name}</small> : null}
                 </label>
                 <label>
                   <span>Phone</span>
-                  <input name="phone" type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} required />
+                  <input className={fieldErrors.phone ? 'field-invalid' : ''} aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? 'consultation-phone-error' : undefined} name="phone" type="tel" inputMode="tel" autoComplete="tel" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} required />
+                  {fieldErrors.phone ? <small className="form-field-error" id="consultation-phone-error">{fieldErrors.phone}</small> : null}
                 </label>
                 <label className="form-wide">
                   <span>Email</span>
-                  <input name="email" type="email" inputMode="email" autoComplete="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} required />
+                  <input className={fieldErrors.email ? 'field-invalid' : ''} aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email ? 'consultation-email-error' : undefined} name="email" type="email" inputMode="email" autoComplete="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} required />
+                  {fieldErrors.email ? <small className="form-field-error" id="consultation-email-error">{fieldErrors.email}</small> : null}
                 </label>
                 <label className="form-wide">
                   <span>Project type</span>
-                  <select name="projectType" value={form.projectType} onChange={(event) => updateField('projectType', event.target.value)} required>
+                  <select className={fieldErrors.projectType ? 'field-invalid' : ''} aria-invalid={Boolean(fieldErrors.projectType)} aria-describedby={fieldErrors.projectType ? 'consultation-project-error' : undefined} name="projectType" value={form.projectType} onChange={(event) => updateField('projectType', event.target.value)} required>
                     <option value="" disabled>Select a use</option>
                     <option>Container home</option>
                     <option>Workforce housing</option>
@@ -236,14 +254,16 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
                     <option>Hospitality or guest suite</option>
                     <option>Other custom space</option>
                   </select>
+                  {fieldErrors.projectType ? <small className="form-field-error" id="consultation-project-error">{fieldErrors.projectType}</small> : null}
                 </label>
                 <label>
                   <span>Project location</span>
-                  <input name="location" autoComplete="address-level2" placeholder="City, State" value={form.location} onChange={(event) => updateField('location', event.target.value)} required />
+                  <input className={fieldErrors.location ? 'field-invalid' : ''} aria-invalid={Boolean(fieldErrors.location)} aria-describedby={fieldErrors.location ? 'consultation-location-error' : undefined} name="location" autoComplete="address-level2" placeholder="City, State" value={form.location} onChange={(event) => updateField('location', event.target.value)} required />
+                  {fieldErrors.location ? <small className="form-field-error" id="consultation-location-error">{fieldErrors.location}</small> : null}
                 </label>
                 <label>
                   <span>Ideal timing</span>
-                  <select name="timing" value={form.timing} onChange={(event) => updateField('timing', event.target.value)} required>
+                  <select className={fieldErrors.timing ? 'field-invalid' : ''} aria-invalid={Boolean(fieldErrors.timing)} aria-describedby={fieldErrors.timing ? 'consultation-timing-error' : undefined} name="timing" value={form.timing} onChange={(event) => updateField('timing', event.target.value)} required>
                     <option value="" disabled>Choose timing</option>
                     <option>As soon as possible</option>
                     <option>1–3 months</option>
@@ -251,11 +271,12 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
                     <option>6+ months</option>
                     <option>Just exploring</option>
                   </select>
+                  {fieldErrors.timing ? <small className="form-field-error" id="consultation-timing-error">{fieldErrors.timing}</small> : null}
                 </label>
               </div>
+              <p className={`form-status form-status-${formStatus.type}`} role={formStatus.type === 'error' ? 'alert' : 'status'} aria-live="polite">{formStatus.message}</p>
               <button className="form-submit" type="submit" disabled={formStatus.type === 'submitting'}>{formStatus.type === 'submitting' ? 'Submitting…' : 'Start My Project'} <ArrowRight size={16} aria-hidden="true" /></button>
               <small>Sent securely to the CMAC sales queue. No obligation.</small>
-              <p className={`form-status form-status-${formStatus.type}`} role={formStatus.type === 'error' ? 'alert' : 'status'} aria-live="polite">{formStatus.message}</p>
             </form>
 
             <div className="trust-row">

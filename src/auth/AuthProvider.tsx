@@ -6,7 +6,7 @@ import type { EmployeeRow } from '../lib/database.types'
 import { AuthContext } from './auth-context'
 
 const localPreviewEmployee: EmployeeRow = {
-  id: '00000000-0000-0000-0000-000000000001',
+  id: '11111111-1111-4111-8111-111111111111',
   auth_user_id: null,
   email: 'preview@cmaccontainers.com',
   first_name: 'Local',

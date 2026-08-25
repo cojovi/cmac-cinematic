@@ -12,6 +12,7 @@ const EmployeePortalLayout = lazy(() => import('./layouts/EmployeePortalLayout')
 const DashboardPage = lazy(() => import('./pages/portal/DashboardPage'))
 const ResourceListPage = lazy(() => import('./pages/portal/ResourceListPage'))
 const ResourceDetailPage = lazy(() => import('./pages/portal/ResourceDetailPage'))
+const LeadCreatePage = lazy(() => import('./pages/portal/LeadCreatePage'))
 const InventoryPage = lazy(() => import('./pages/portal/InventoryPage'))
 const NewSalePage = lazy(() => import('./pages/portal/NewSalePage'))
 const MarketingPage = lazy(() => import('./pages/portal/MarketingPage'))
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="/employee-portal" element={<EmployeePortalLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="leads" element={<ResourceListPage resource="leads" />} />
+          <Route path="leads/new" element={<LeadCreatePage />} />
           <Route path="leads/:leadId" element={<ResourceDetailPage resource="leads" />} />
           <Route path="customers" element={<ResourceListPage resource="customers" />} />
           <Route path="customers/:contactId" element={<ResourceDetailPage resource="customers" />} />
