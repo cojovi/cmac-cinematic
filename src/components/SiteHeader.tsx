@@ -38,13 +38,13 @@ export function SiteHeader({ menuOpen, onMenuToggle, onNavigate, onRouteNavigate
         >
           <LogIn size={15} aria-hidden="true" /> Login
         </a>
-        <a className="mobile-nav-phone" href="tel:8312623222" onClick={onNavigate}>
-          <Phone size={15} aria-hidden="true" /> (831) 262-3222
+        <a className="mobile-nav-phone" href="tel:6822187221" onClick={onNavigate}>
+          <Phone size={15} aria-hidden="true" /> (682) 218-7221
         </a>
       </nav>
       <div className="nav-actions">
-        <a className="phone-pill" href="tel:8312623222" aria-label="Call CMAC Container Homes at 831 262 3222">
-          <Phone size={14} aria-hidden="true" /> (831) 262-3222
+        <a className="phone-pill" href="tel:6822187221" aria-label="Call CMAC Container Homes at 682 218 7221">
+          <Phone size={14} aria-hidden="true" /> (682) 218-7221
         </a>
         <a className="nav-request" href="#consultation">
           Request a Quote

@@ -23,6 +23,8 @@ test('public landing and lead form render without overflow', async ({ page }) =>
   await expect(page).toHaveTitle('CMAC Container Homes | Texas-Built Modular Living')
   await expect(page.getByRole('heading', { name: 'Container Homes', level: 1 })).toBeVisible()
   await expect(page.getByLabel('Full name')).toBeVisible()
+  await expect(page.locator('a[href="tel:6822187221"]').first()).toContainText('(682) 218-7221')
+  await expect(page.getByText('© 2026 cojovi.com. All rights reserved.')).toBeVisible()
 
   await page.getByLabel('Full name').fill('Testing Lead')
   await page.getByLabel('Phone').fill('one')

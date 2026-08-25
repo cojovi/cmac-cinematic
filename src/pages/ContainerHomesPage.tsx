@@ -171,14 +171,14 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
       return
     }
     if (!supabase) {
-      setFormStatus({ type: 'error', message: 'Online inquiries are not configured yet. Please call (831) 262-3222.' })
+      setFormStatus({ type: 'error', message: 'Online inquiries are not configured yet. Please call (682) 218-7221.' })
       return
     }
     setFormStatus({ type: 'submitting', message: 'Sending your project details securely…' })
     const { data, error } = await supabase.functions.invoke('submit-lead', { body: parsed.data })
     const accepted = (data as { accepted?: boolean } | null)?.accepted
     if (error || !accepted) {
-      setFormStatus({ type: 'error', message: 'We could not submit your inquiry. Please try again or call (831) 262-3222.' })
+      setFormStatus({ type: 'error', message: 'We could not submit your inquiry. Please try again or call (682) 218-7221.' })
       return
     }
     setForm(initialForm)
@@ -437,7 +437,7 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
               <p>Tell us how you want to live, work, or house your team. We’ll help turn the right container platform into a finished space with purpose.</p>
               <div className="cta-actions">
                 <RedButton href="#consultation">Start a Conversation</RedButton>
-                <a className="btn btn-outline" href="tel:8312623222"><Phone size={14} aria-hidden="true" /> (831) 262-3222</a>
+                <a className="btn btn-outline" href="tel:6822187221"><Phone size={14} aria-hidden="true" /> (682) 218-7221</a>
               </div>
             </div>
             <div className="cta-benefits">
@@ -456,12 +456,12 @@ export default function ContainerHomesPage({ onRouteNavigate }: { onRouteNavigat
             </nav>
             <div className="footer-contact">
               <h2>Start a Project</h2>
-              <a href="tel:8312623222"><Phone size={14} /> (831) 262-3222</a>
+              <a href="tel:6822187221"><Phone size={14} /> (682) 218-7221</a>
               <a href="mailto:info@cmaccontainers.com"><Mail size={14} /> info@cmaccontainers.com</a>
             </div>
             <div className="footer-mark"><Package size={23} aria-hidden="true" /><span>Built in Texas</span><small>Delivery available nationwide</small></div>
           </div>
-          <div className="footer-bottom"><span>© {new Date().getFullYear()} CMAC Container Homes. All rights reserved.</span><a href="#home">Back to top ↑</a></div>
+          <div className="footer-bottom"><span>© 2026 cojovi.com. All rights reserved.</span><a href="#home">Back to top ↑</a></div>
         </footer>
       </div>
     </>
