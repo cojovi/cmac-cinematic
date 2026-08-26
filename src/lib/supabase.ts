@@ -16,22 +16,28 @@ export const supabase: SupabaseClient<Database> | null = isSupabaseConfigured
         // explicit prevents the client from consuming the code before routing
         // and briefly rendering the public homepage.
         detectSessionInUrl: false,
+        experimental: {
+          // Correlates callbacks to their exact verifier when multiple sign-in
+          // attempts are open. The callback route preserves this parameter.
+          appendPkceFlowIdToRedirects: true,
+        },
       },
     })
   : null
 
 let pendingCodeExchange: {
-  code: string
+  key: string
   request: ReturnType<NonNullable<typeof supabase>['auth']['exchangeCodeForSession']>
 } | null = null
 
-export function exchangeOAuthCode(code: string) {
+export function exchangeOAuthCode(code: string, flowId?: string | null) {
   if (!supabase) throw new Error('Employee sign-in is not configured in this environment.')
 
-  if (pendingCodeExchange?.code === code) return pendingCodeExchange.request
+  const key = `${flowId ?? ''}:${code}`
+  if (pendingCodeExchange?.key === key) return pendingCodeExchange.request
 
-  const request = supabase.auth.exchangeCodeForSession(code)
-  pendingCodeExchange = { code, request }
+  const request = supabase.auth.exchangeCodeForSession(code, flowId ? { flowId } : undefined)
+  pendingCodeExchange = { key, request }
   return request
 }
 

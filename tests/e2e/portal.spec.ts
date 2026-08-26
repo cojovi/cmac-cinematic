@@ -58,7 +58,9 @@ test('production login is Google-only and requests the correct callback', async 
   const authorizeRequest = await requestPromise
   const authorizeUrl = new URL(authorizeRequest.url())
   expect(authorizeUrl.searchParams.get('provider')).toBe('google')
-  expect(authorizeUrl.searchParams.get('redirect_to')).toBe('http://127.0.0.1:4174/auth/callback')
+  const redirectUrl = new URL(authorizeUrl.searchParams.get('redirect_to') ?? '')
+  expect(redirectUrl.origin + redirectUrl.pathname).toBe('http://127.0.0.1:4174/auth/callback')
+  expect(redirectUrl.searchParams.get('sb_flow_id')).toMatch(/^[a-f0-9]{32}$/)
 })
 
 test('an OAuth response sent to the site root is recovered by the callback route', async ({ page }) => {
@@ -66,8 +68,23 @@ test('an OAuth response sent to the site root is recovered by the callback route
 
   await expect(page).toHaveURL(/\/auth\/callback\?error=access_denied/)
   await expect(page.getByRole('heading', { name: 'Sign-in could not be completed' })).toBeVisible()
-  await expect(page.getByText('Workspace access denied')).toBeVisible()
+  await expect(page.getByText('Google could not complete sign-in. Please try again with an authorized CMAC account.')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Container Homes', level: 1 })).toHaveCount(0)
+})
+
+test('a missing PKCE verifier automatically starts one fresh bounded sign-in', async ({ page }) => {
+  await page.route('https://*/auth/v1/settings', (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ external: { google: true } }),
+  }))
+  await page.route('https://*/auth/v1/authorize**', (route) => route.abort())
+  const requestPromise = page.waitForRequest((request) => request.url().includes('/auth/v1/authorize'))
+
+  await page.goto('http://127.0.0.1:4174/auth/callback?code=expired-code&sb_flow_id=0123456789abcdef0123456789abcdef')
+
+  const authorizeRequest = await requestPromise
+  expect(new URL(authorizeRequest.url()).searchParams.get('provider')).toBe('google')
 })
 
 test('disabled Google provider is contained in the login UI', async ({ page }) => {

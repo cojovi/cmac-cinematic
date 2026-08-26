@@ -3,7 +3,7 @@ import { publicLeadSchema, splitName } from './lead-validation'
 import { mockInventoryProvider } from './inventory-provider'
 import { quoteTotal, normalizeOperationalStatus } from './sales-utils'
 import { isInventoryStale } from '../hooks/useInventorySummary'
-import { authCallbackRoute, authCallbackUrl, hasOAuthResponse, providerErrorFromSearch } from './auth-flow'
+import { authCallbackRoute, authCallbackUrl, canonicalAuthOrigin, canonicalGoogleLoginUrl, claimPkceRecovery, clearPkceRecovery, friendlyProviderError, hasOAuthResponse, providerErrorFromSearch } from './auth-flow'
 import { leadFormSchema } from './lead-management'
 
 describe('OAuth callback routing', () => {
@@ -16,6 +16,31 @@ describe('OAuth callback routing', () => {
   it('builds an exact callback URL and surfaces provider errors', () => {
     expect(authCallbackUrl('https://cmac-cinematic.vercel.app/')).toBe('https://cmac-cinematic.vercel.app/auth/callback')
     expect(providerErrorFromSearch('?error=access_denied&error_description=Workspace+access+denied')).toBe('Workspace access denied')
+  })
+
+  it('moves generated Vercel deployments to the stable production origin before OAuth', () => {
+    const preview = 'https://cmac-cinematic-abc123-cojovis-projects.vercel.app'
+    expect(canonicalAuthOrigin(preview)).toBe('https://cmac-cinematic.vercel.app')
+    expect(canonicalGoogleLoginUrl(preview)).toBe('https://cmac-cinematic.vercel.app/login?continue=google')
+    expect(canonicalAuthOrigin('http://localhost:5173')).toBe('http://localhost:5173')
+  })
+
+  it('allows only one automatic PKCE recovery inside the retry window', () => {
+    const values = new Map<string, string>()
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value) },
+      removeItem: (key: string) => { values.delete(key) },
+    }
+    expect(claimPkceRecovery(storage, 1_000)).toBe(true)
+    expect(claimPkceRecovery(storage, 2_000)).toBe(false)
+    clearPkceRecovery(storage)
+    expect(claimPkceRecovery(storage, 2_000)).toBe(true)
+  })
+
+  it('does not expose raw provider errors to the callback screen', () => {
+    expect(friendlyProviderError('?error=server_error&error_description=internal+provider+detail'))
+      .toBe('Google could not complete sign-in. Please try again with an authorized CMAC account.')
   })
 })
 

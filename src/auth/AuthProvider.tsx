@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { authCallbackUrl } from '../lib/auth-flow'
+import { isAuthPKCECodeVerifierMissingError, type Session } from '@supabase/supabase-js'
+import { authCallbackUrl, canonicalAuthOrigin, canonicalGoogleLoginUrl } from '../lib/auth-flow'
 import { exchangeOAuthCode, googleProviderIsEnabled, isSupabaseConfigured, localPortalPreviewEnabled, supabase } from '../lib/supabase'
 import type { EmployeeRow } from '../lib/database.types'
 import { AuthContext } from './auth-context'
@@ -95,39 +95,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     setError(null)
+    const authOrigin = canonicalAuthOrigin(window.location.origin)
+    if (authOrigin !== window.location.origin) {
+      window.location.assign(canonicalGoogleLoginUrl(window.location.origin))
+      return
+    }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: authCallbackUrl(window.location.origin),
+        redirectTo: authCallbackUrl(authOrigin),
         scopes: 'openid email profile',
       },
     })
-    if (oauthError) setError(oauthError.message)
+    if (oauthError) setError('Google sign-in could not be started. Please try again.')
   }, [googleProviderStatus])
 
-  const completeOAuthSignIn = useCallback(async (code: string) => {
+  const completeOAuthSignIn = useCallback(async (code: string, flowId?: string | null) => {
     setError(null)
     setLoading(true)
 
     try {
-      const { data, error: exchangeError } = await exchangeOAuthCode(code)
+      const { data, error: exchangeError } = await exchangeOAuthCode(code, flowId)
       if (exchangeError || !data.session) {
         setSession(null)
         setEmployee(null)
-        setError(exchangeError?.message ?? 'Google did not return a valid employee session.')
+        const verifierMissing = exchangeError && isAuthPKCECodeVerifierMissingError(exchangeError)
+        setError(verifierMissing
+          ? 'Your secure sign-in handoff expired. Reconnecting to Google…'
+          : 'Google did not return a valid employee session. Please try again.')
         setLoading(false)
-        return false
+        return verifierMissing ? 'restart-required' : 'failed'
       }
 
       setSession(data.session)
       await loadEmployee(data.session)
-      return true
+      return 'completed'
     } catch (exchangeError) {
       setSession(null)
       setEmployee(null)
-      setError(exchangeError instanceof Error ? exchangeError.message : 'Google sign-in could not be completed.')
+      const verifierMissing = isAuthPKCECodeVerifierMissingError(exchangeError)
+      setError(verifierMissing
+        ? 'Your secure sign-in handoff expired. Reconnecting to Google…'
+        : 'Google sign-in could not be completed. Please try again.')
       setLoading(false)
-      return false
+      return verifierMissing ? 'restart-required' : 'failed'
     }
   }, [loadEmployee])
 

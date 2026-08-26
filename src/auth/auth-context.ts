@@ -11,7 +11,7 @@ export interface AuthContextValue {
   previewMode: boolean
   error: string | null
   signInWithGoogle: () => Promise<void>
-  completeOAuthSignIn: (code: string) => Promise<boolean>
+  completeOAuthSignIn: (code: string, flowId?: string | null) => Promise<'completed' | 'restart-required' | 'failed'>
   signOut: () => Promise<void>
   refreshEmployee: () => Promise<void>
 }

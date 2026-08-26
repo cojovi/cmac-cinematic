@@ -1,16 +1,25 @@
-import { useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Building2, KeyRound, HardHat, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { AccessHeader } from '../components/AccessHeader'
 import { useAuth } from '../auth/useAuth'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const continued = useRef(false)
   const { employee, session, configured, googleProviderStatus, previewMode, loading, error, signInWithGoogle } = useAuth()
 
   useEffect(() => {
     document.title = 'Login | CMAC Container Homes'
   }, [])
+
+  useEffect(() => {
+    if (searchParams.get('continue') !== 'google' || googleProviderStatus !== 'enabled' || loading || continued.current) return
+    continued.current = true
+    window.history.replaceState(window.history.state, '', '/login')
+    void signInWithGoogle()
+  }, [googleProviderStatus, loading, searchParams, signInWithGoogle])
 
   if (!loading && employee && (session || previewMode)) return <Navigate to="/employee-portal" replace />
 
