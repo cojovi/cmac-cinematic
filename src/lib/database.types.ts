@@ -974,6 +974,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_team_overview: { Args: Record<PropertyKey, never>; Returns: Json }
+      portal_dashboard_summary: { Args: Record<PropertyKey, never>; Returns: Json }
+      admin_reassign_contact: {
+        Args: { p_actor_employee_id: string; p_contact_id: string; p_employee_id: string; p_expected_owner_id?: string }
+        Returns: Json
+      }
       admin_manage_employee: {
         Args: {
           p_action: string

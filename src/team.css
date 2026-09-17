@@ -1,0 +1,34 @@
+.team-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:18px 0; }
+.team-stats > div { display:flex; gap:16px; align-items:center; padding:24px; border:1px solid var(--line); border-radius:12px; background:linear-gradient(130deg,#141e22,#090d0f); }
+.team-stats svg { color:var(--muted); }.team-stats strong { font-size:30px; font-weight:600; line-height:1; }
+.team-stats strong span { display:block; color:var(--muted); font-size:12px; line-height:1.5; margin-top:10px; font-weight:500; }.team-stats .needs-attention strong { color:#efb96a; }
+.team-preview,.team-triage { padding:14px 18px; border:1px solid #75592f; border-radius:10px; background:#b57c1512; color:#efd19b; font-size:12px; }
+.team-triage { display:flex; gap:20px; flex-wrap:wrap; margin-bottom:18px; }.team-triage a { text-decoration:underline; text-underline-offset:4px; }
+.team-roster { display:grid; grid-template-columns:repeat(auto-fit,minmax(245px,1fr)); gap:12px; margin:16px 0 24px; }
+.team-person-card { width:100%; text-align:left; color:inherit; border:1px solid var(--line); background:linear-gradient(150deg,#131d21,#090d0f); border-radius:12px; padding:22px; cursor:pointer; transition:border-color .15s,background .15s; min-width:0; }
+.team-person-card:hover { border-color:#718187; }.team-person-card.selected { border-color:#ff5d5d; background:linear-gradient(150deg,#301819,#11181b); box-shadow:inset 0 3px 0 #ff4141; }
+.team-person-heading { display:flex; gap:12px; align-items:center; }.team-person-heading > div { flex:1; min-width:0; }.team-person-heading strong { display:block; font-size:15px; }
+.team-person-heading small { display:block; margin-top:6px; font-size:10px; color:var(--muted); }.team-person-card p { font-size:11px; color:var(--muted); overflow-wrap:anywhere; margin:18px 0; }
+.team-person-work { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding-bottom:20px; }.team-person-work span { color:var(--muted); font-size:10px; }.team-person-work b { display:block; color:var(--text); font-size:23px; margin-bottom:6px; }
+.team-person-footer { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--line); padding-top:14px; font-size:11px; color:var(--muted); }
+.team-workspace { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr); gap:18px; align-items:start; }.team-workspace .workspace-card { padding:25px; min-width:0; }.team-management-stack { display:grid; gap:16px; min-width:0; }
+.team-helper { display:flex; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--muted); line-height:1.65; margin:14px 0; }.team-selection-hint h3 { margin:16px 0; font-size:16px; }.team-selection-hint p { color:var(--muted); font-size:13px; line-height:1.7; }
+.team-assignment-links { display:grid; }.team-assignment-links a { display:flex; align-items:center; gap:14px; padding:16px 0; border-bottom:1px solid var(--line); font-size:14px; }.team-assignment-links a > span { flex:1; }.team-assignment-links a small { display:block; color:var(--muted); font-size:10px; margin-top:5px; }.team-assignment-links a > strong { font-size:20px; }.team-assignment-links a:hover { color:#ff7777; }
+.team-access-disclosure > summary { cursor:pointer; display:flex; align-items:center; gap:12px; font-size:13px; min-height:30px; list-style:none; }.team-access-disclosure > summary::after { content:'+'; margin-left:auto; font-size:22px; color:#ff6666; }.team-access-disclosure[open] > summary::after { content:'−'; }
+.team-access-form { margin-top:25px; }.team-access-form small { display:block; font-size:10px; line-height:1.5; color:var(--muted); font-weight:400; margin-top:8px; }.team-form-actions { display:flex; flex-wrap:wrap; gap:10px; }.team-form-actions > button { flex:1; }
+.team-activity-feed { list-style:none; margin:20px 0; padding:0; }.team-activity-feed li { display:grid; grid-template-columns:12px minmax(0,1fr); gap:15px; position:relative; padding-bottom:28px; }.team-activity-feed li:not(:last-child)::before { content:''; width:1px; background:var(--line); position:absolute; left:5px; top:12px; bottom:0; }
+.activity-node { width:10px; height:10px; margin-top:5px; border:2px solid #fc6666; border-radius:50%; }.activity-byline { display:flex; gap:10px; justify-content:space-between; flex-wrap:wrap; font-size:12px; }.activity-byline strong { color:#d6e2e6; }.activity-byline time { color:var(--muted); font-size:10px; }
+.team-activity-feed h4 { margin:9px 0 5px; font-size:14px; font-family:inherit; text-transform:none; }.team-activity-feed p { font-size:12px; line-height:1.65; color:var(--muted); white-space:pre-wrap; overflow-wrap:anywhere; }.team-activity-feed a { display:inline-block; margin-top:10px; font-size:11px; color:#ff7c7c; text-decoration:underline; text-underline-offset:4px; }
+.record-fields dd a { color:#ff8585; text-decoration:underline; text-underline-offset:4px; }.record-fields dd { overflow-wrap:anywhere; }.record-fields .record-note-field { grid-column:1/-1; white-space:pre-wrap; }.record-related-links { display:flex; flex-wrap:wrap; gap:12px; padding-top:22px; }.record-related-links a { border:1px solid var(--line); border-radius:6px; padding:10px 12px; font-size:12px; }
+.resource-owner { display:block; margin-top:6px; color:#b4c9cb; font-size:10px; }.resource-toolbar { flex-wrap:wrap; }.team-access-form input:read-only { opacity:.65; }.team-page button:focus-visible,.team-page a:focus-visible,.team-access-disclosure summary:focus-visible { outline:2px solid #f3f5f5; outline-offset:4px; }
+.resource-toolbar .workspace-search { min-height:44px; }
+.resource-table > [role=listitem]:not(:last-child) > .resource-row { border-bottom:1px solid var(--line); }
+.record-actions-stack { grid-column:2; grid-row:span 2; }
+.record-timeline { grid-column:1; }
+.record-fields dt { font-size:9px; }.record-fields dd { font-size:13px; line-height:1.6; }
+.record-detail-page .record-action-form label { font-size:10px; }
+.record-detail-page .record-action-form input,.record-detail-page .record-action-form select,.record-detail-page .record-action-form textarea { font-size:13px; }
+@media(max-width:1100px) { .team-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }.team-workspace { grid-template-columns:1fr; } }
+@media(max-width:760px) { .record-actions-stack,.record-timeline { grid-column:auto; grid-row:auto; } }
+@media(max-width:600px) { .team-stats > div { padding:18px 14px; gap:10px; }.team-stats strong { font-size:25px; }.team-stats svg { display:none; }.team-roster { grid-template-columns:1fr; }.team-workspace .workspace-card { padding:20px; }.team-person-card { padding:20px; }.team-form-actions { flex-direction:column; } }
+@media(prefers-reduced-motion:reduce) { .team-person-card { transition:none; } }

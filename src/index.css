@@ -116,6 +116,15 @@ button {
   transform: translateY(0);
 }
 
+.skip-link:not(:focus) {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 #root {
   min-height: 100vh;
 }

@@ -43,3 +43,34 @@ export const portalFixtures: Record<string, JsonRecord[]> = {
     { id: 'preview-template-3', title: 'Site Readiness Checklist', slug: 'site-readiness-checklist', description: 'Access, foundation, utilities, crane, and placement.', category: 'transaction', is_active: false, provider: null, provider_template_id: null, display_order: 30 },
   ],
 }
+
+// Relational fixtures mirror the selected joins without ever entering production.
+const previewAdmin = portalFixtures.employees[0]
+const previewRep = portalFixtures.employees[1]
+portalFixtures.contacts.forEach((row, index) => {
+  row.assigned_employee_id = index === 2 ? previewAdmin.id : previewRep.id
+  row.created_by = previewAdmin.id
+  row.owner = index === 2 ? previewAdmin : previewRep
+  row.creator = previewAdmin
+})
+portalFixtures.leads.forEach(row => { row.owner = previewRep })
+portalFixtures.deals.forEach((row, index) => {
+  row.sales_rep_id = index === 0 ? previewRep.id : previewAdmin.id
+  row.owner = index === 0 ? previewRep : previewAdmin
+  row.contact_id = index === 0 ? 'preview-contact-1' : 'preview-contact-3'
+  row.created_at = iso(3)
+})
+portalFixtures.tasks.forEach((row, index) => {
+  row.employee_id = previewRep.id; row.owner = previewRep
+  row.contact_id = `preview-contact-${index + 1}`; row.created_at = iso(1)
+})
+portalFixtures.activities.forEach((row, index) => {
+  row.employee_id = index === 1 ? null : previewRep.id
+  row.actor = index === 1 ? null : previewRep
+  row.contact_id = `preview-contact-${index === 2 ? 3 : index + 1}`
+  row.contacts = portalFixtures.contacts.find(contact => contact.id === row.contact_id)
+  if (index === 0) row.deal_id = 'preview-deal-1'
+  if (index === 1) row.lead_id = 'preview-lead-2'
+})
+portalFixtures.quotes.forEach(row => { row.employee_id = previewRep.id; row.owner = previewRep; row.contact_id = 'preview-contact-1'; row.deal_id = 'preview-deal-1' })
+portalFixtures.contracts.forEach(row => { row.employee_id = previewAdmin.id; row.owner = previewAdmin; row.contact_id = 'preview-contact-3'; row.deal_id = 'preview-deal-2' })

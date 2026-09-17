@@ -22,7 +22,7 @@ export default function LeadCreatePage() {
   const [message, setMessage] = useState<string | null>(null)
   const isAdmin = employee?.role === 'admin'
   const salespeople = useMemo<SalespersonOption[]>(() => employees.rows
-    .filter((row) => row.active && row.role === 'sales_rep')
+    .filter((row) => row.active)
     .map((row) => ({ id: String(row.id), displayName: String(row.display_name), repCode: String(row.rep_code) })), [employees.rows])
 
   function update<Key extends keyof LeadFormValues>(field: Key, value: LeadFormValues[Key]) {

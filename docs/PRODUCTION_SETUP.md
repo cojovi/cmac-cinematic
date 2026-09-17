@@ -139,3 +139,7 @@ npm run build
 ```
 
 Set `VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true` only in an uncommitted local environment for visual review. The flag is gated by `import.meta.env.DEV`, is read-only, and cannot enable a production authentication bypass.
+
+## Team-management release — September 17, 2026
+
+See [Team management](TEAM_MANAGEMENT.md) for administrator controls, ownership-transfer rules, activity coverage, security changes, and verification commands. This release requires its CRM migration and the updated `admin-manage-employee` Edge Function before the frontend is released. No new Vercel environment variables are needed; Bolt-Data, Google login, and the DocuSign deferral are unchanged.

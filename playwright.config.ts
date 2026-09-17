@@ -25,12 +25,14 @@ export default defineConfig({
   webServer: [
     {
       command: 'VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true npm run dev -- --host 127.0.0.1 --port 4173',
+      env: { VITE_SUPABASE_URL: 'https://crm-test.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_fixture_only' },
       url: 'http://127.0.0.1:4173',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
     {
       command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4174',
+      env: { VITE_SUPABASE_URL: 'https://crm-test.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_fixture_only' },
       url: 'http://127.0.0.1:4174',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

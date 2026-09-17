@@ -12,7 +12,7 @@
     "test:e2e": "playwright test",
     "db:start": "npx supabase@2.109.1 start --exclude edge-runtime,gotrue,imgproxy,kong,logflare,mailpit,postgres-meta,postgrest,realtime,storage-api,studio,supavisor,vector",
     "db:reset": "npx supabase@2.109.1 db reset --local",
-    "db:test": "psql 'postgresql://postgres:postgres@127.0.0.1:55322/postgres' -v ON_ERROR_STOP=1 -f 'supabase/tests/production_crm.test.sql'",
+    "db:test": "node scripts/test-db.mjs",
     "preview": "vite preview",
     "screenshot": "node scripts/screenshot.js"
   },
