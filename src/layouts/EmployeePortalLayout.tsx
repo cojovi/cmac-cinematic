@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BookOpenCheck, BriefcaseBusiness, ChevronRight, ClipboardCheck, FileSignature,
   Files, LayoutDashboard, LogOut, Mail, Menu, PackageCheck, Plus, ReceiptText,
-  ShieldCheck, UserCog, UsersRound, X, type LucideIcon,
+  ShieldCheck, UserCog, UsersRound, X, QrCode, type LucideIcon,
 } from 'lucide-react'
 import { Logo } from '../components/ui'
 import { useAuth } from '../auth/useAuth'
@@ -24,12 +24,14 @@ const navItems: NavItem[] = [
   { to: '/employee-portal/documents', label: 'Documents', Icon: Files },
   { to: '/employee-portal/admin/employees', label: 'Employees', Icon: UserCog, admin: true },
   { to: '/employee-portal/admin/marketing', label: 'Library admin', Icon: ShieldCheck, admin: true },
+  { to: '/employee-portal/admin/qr', label: 'QR Code', Icon: QrCode, admin: true },
 ]
 
 const routeMeta = [
   ['/sales/new', 'SALES / NEW TRANSACTION', 'Prepare a sale'],
   ['/admin/employees', 'ADMIN / ACCESS CONTROL', 'Employees'],
   ['/admin/marketing', 'ADMIN / APPROVED MATERIALS', 'Marketing library'],
+  ['/admin/qr', 'ADMIN / QR INQUIRIES', 'QR Code'],
   ['/leads', 'CRM / OPPORTUNITIES', 'Leads'],
   ['/customers', 'CRM / CONTACT RECORDS', 'Customers'],
   ['/tasks', 'CRM / FOLLOW-UP QUEUE', 'Follow-ups'],

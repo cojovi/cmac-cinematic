@@ -19,6 +19,8 @@ const MarketingPage = lazy(() => import('./pages/portal/MarketingPage'))
 const DocumentsPage = lazy(() => import('./pages/portal/DocumentsPage'))
 const EmployeesAdminPage = lazy(() => import('./pages/portal/EmployeesAdminPage'))
 const MarketingAdminPage = lazy(() => import('./pages/portal/MarketingAdminPage'))
+const QrPage = lazy(() => import('./pages/QrPage'))
+const QrAdminPage = lazy(() => import('./pages/portal/QrAdminPage'))
 
 function PublicHome() {
   const navigate = useNavigate()
@@ -59,6 +61,7 @@ export default function App() {
     <Suspense fallback={<main className="route-guard-state" aria-live="polite"><span>CMAC / LOADING</span><h1>Opening workspace</h1></main>}><ScrollToTop /><Routes>
       <Route path="/" element={<PublicHome />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/qr" element={<QrPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/client-portal" element={<ClientPortal />} />
       <Route element={<RequireEmployee />}>
@@ -81,6 +84,7 @@ export default function App() {
           <Route element={<RequireAdmin />}>
             <Route path="admin/employees" element={<EmployeesAdminPage />} />
             <Route path="admin/marketing" element={<MarketingAdminPage />} />
+            <Route path="admin/qr" element={<QrAdminPage />} />
           </Route>
         </Route>
       </Route>

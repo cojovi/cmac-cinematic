@@ -283,6 +283,10 @@ uri = "pg-functions://postgres/private/before_user_created_hook"
 [functions.submit-lead]
 verify_jwt = false
 
+# Public visits/submissions; retry action validates a live admin session itself.
+[functions.qr-intake]
+verify_jwt = false
+
 [functions.manage-lead]
 verify_jwt = true
 

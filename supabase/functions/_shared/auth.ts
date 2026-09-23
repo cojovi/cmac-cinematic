@@ -25,7 +25,11 @@ export function userClient(request: Request): SupabaseClient {
   })
 }
 
-export async function requireEmployee(request: Request, adminOnly = false) {
+type EmployeeAuthorization =
+  | { error: string; status: 401 | 403 }
+  | { employee: EmployeeIdentity; token: string; client: SupabaseClient }
+
+export async function requireEmployee(request: Request, adminOnly = false): Promise<EmployeeAuthorization> {
   const authorization = request.headers.get('authorization') ?? ''
   const token = authorization.match(/^Bearer\s+(.+)$/i)?.[1]
   if (!token) return { error: 'Employee authentication is required.', status: 401 as const }

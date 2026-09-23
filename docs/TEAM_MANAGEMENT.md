@@ -34,6 +34,8 @@ Migration: `20260917172254_team_management.sql`.
 
 Apply the migration, deploy the updated `admin-manage-employee` function with its shared modules, then release the frontend. No new Vercel environment variables, Google scopes, or provider credentials are required. Bolt-Data is untouched.
 
+September 23 release update: the owner approved the full `admintest` release. This migration and `admin-manage-employee` version 3 are now installed in `cmac_crm`. The QR feature's live Gmail acceptance and duplicate-send check passed; see [QR intake release status](QR_INTAKE.md#release-status--september-23-2026). The follow-up `deduplicate_task_owner_index` migration retains the existing equivalent index without changing any task data.
+
 ## Verification
 
 - `npm run lint`, `npm run build`, `npm test`.

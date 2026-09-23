@@ -974,6 +974,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      qr_admin_report: { Args: { p_days?: number; p_offset?: number }; Returns: Json }
       admin_team_overview: { Args: Record<PropertyKey, never>; Returns: Json }
       portal_dashboard_summary: { Args: Record<PropertyKey, never>; Returns: Json }
       admin_reassign_contact: {
