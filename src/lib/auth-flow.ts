@@ -1,6 +1,7 @@
 const AUTH_CALLBACK_PATH = '/auth/callback'
 const AUTH_LOGIN_PATH = '/login'
-const DEFAULT_PRODUCTION_ORIGIN = 'https://cmac-cinematic.vercel.app'
+const DEFAULT_PRODUCTION_ORIGIN = 'https://www.cmaccontainers.com'
+const PRODUCTION_AUTH_HOSTS = new Set(['www.cmaccontainers.com', 'cmaccontainers.com', 'cmac-cinematic.vercel.app'])
 const PKCE_RECOVERY_KEY = 'cmac-oauth-pkce-recovery'
 const PKCE_RECOVERY_WINDOW_MS = 5 * 60 * 1000
 
@@ -26,7 +27,12 @@ export function canonicalAuthOrigin(currentOrigin: string, configuredOrigin = im
     && current.hostname !== canonical.hostname
     && current.hostname.startsWith('cmac-cinematic-')
 
-  return isGeneratedVercelDeployment ? canonical.origin : current.origin
+  // Start OAuth on the same stable origin that receives its callback. The
+  // verifier lives in origin-scoped storage, so crossing from the apex or old
+  // Vercel address after Google returns would require a second sign-in.
+  return isGeneratedVercelDeployment || PRODUCTION_AUTH_HOSTS.has(current.hostname)
+    ? canonical.origin
+    : current.origin
 }
 
 export function canonicalGoogleLoginUrl(currentOrigin: string) {

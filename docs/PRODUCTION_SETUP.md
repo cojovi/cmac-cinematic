@@ -2,6 +2,14 @@
 
 The application is production-capable but intentionally reports external services as **not configured** until CMAC supplies credentials. Never place secrets in `.env` files committed to source control.
 
+## September 23, 2026 release update
+
+The public production site is **https://www.cmaccontainers.com**. Supabase's Site URL now matches it, and `/auth/callback` on both the www and apex CMAC domains is explicitly allowed; existing Vercel/local callbacks are preserved. Production aliases and generated preview URLs start Google login on www **before** creating the origin-bound PKCE verifier. Do not redirect an in-progress OAuth callback between domains or override `VITE_CANONICAL_SITE_URL` with the old Vercel address. The Google provider's own callback remains the Supabase URL below; employee roles/domain checks are unchanged.
+
+The existing Gmail service-account secrets and `gmail.send`-only Workspace delegation are now configured with owner approval. Live QR server and production-browser submissions saved successfully and Gmail confirmed sending to Charley. A repeated identical request did not resend. See [QR intake](QR_INTAKE.md) for reporting semantics, test records, and delivery caveats. This does not certify marketing sends from every employee account.
+
+The August status table below is historical; this update supersedes its Vercel URL and Gmail configuration status.
+
 ## Configuration status — August 22, 2026
 
 | Area | Status | Next checkpoint |
@@ -63,8 +71,10 @@ The checked-in application uses two separate Google integrations:
    `https://gxiluyvhrrctslnhjkmc.supabase.co/auth/v1/callback`
 
 4. Configure the resulting Web client ID and client secret under Supabase Auth → Providers → Google, then enable Google.
-5. Set the Supabase Site URL to `https://cmac-cinematic.vercel.app` and allow these redirects:
+5. Set the Supabase Site URL to `https://www.cmaccontainers.com` and allow these redirects:
 
+   - `https://www.cmaccontainers.com/auth/callback`
+   - `https://cmaccontainers.com/auth/callback`
    - `https://cmac-cinematic.vercel.app/auth/callback`
    - `http://localhost:5173/auth/callback`
 

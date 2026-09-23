@@ -20,9 +20,18 @@ describe('OAuth callback routing', () => {
 
   it('moves generated Vercel deployments to the stable production origin before OAuth', () => {
     const preview = 'https://cmac-cinematic-abc123-cojovis-projects.vercel.app'
-    expect(canonicalAuthOrigin(preview)).toBe('https://cmac-cinematic.vercel.app')
-    expect(canonicalGoogleLoginUrl(preview)).toBe('https://cmac-cinematic.vercel.app/login?continue=google')
+    expect(canonicalAuthOrigin(preview)).toBe('https://www.cmaccontainers.com')
+    expect(canonicalGoogleLoginUrl(preview)).toBe('https://www.cmaccontainers.com/login?continue=google')
     expect(canonicalAuthOrigin('http://localhost:5173')).toBe('http://localhost:5173')
+  })
+
+  it('starts all production aliases on www before creating an origin-bound verifier', () => {
+    for (const origin of ['https://cmaccontainers.com', 'https://www.cmaccontainers.com', 'https://cmac-cinematic.vercel.app']) {
+      expect(canonicalAuthOrigin(origin)).toBe('https://www.cmaccontainers.com')
+      expect(canonicalGoogleLoginUrl(origin)).toBe('https://www.cmaccontainers.com/login?continue=google')
+    }
+    expect(canonicalAuthOrigin('http://127.0.0.1:4174')).toBe('http://127.0.0.1:4174')
+    expect(canonicalAuthOrigin('https://unrelated.vercel.app')).toBe('https://unrelated.vercel.app')
   })
 
   it('allows only one automatic PKCE recovery inside the retry window', () => {
