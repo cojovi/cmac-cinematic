@@ -1,12 +1,12 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ArrowLeft, BriefcaseBusiness, Save, ShieldCheck, UserRoundCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LeadFormFields, type SalespersonOption } from '../../components/portal/LeadFormFields'
+import { LeadFormFields } from '../../components/portal/LeadFormFields'
 import { ConfigurationState, PortalError, PortalLoading } from '../../components/portal/AsyncState'
 import { useAuth } from '../../auth/useAuth'
 import { usePortalRows } from '../../hooks/usePortalRows'
 import { runLeadAction } from '../../lib/lead-api'
-import { emptyLeadForm, leadErrors, leadFormSchema, type LeadFormValues, type LeadFieldErrors } from '../../lib/lead-management'
+import { emptyLeadForm, leadAssigneeOptions, leadErrors, leadFormSchema, type LeadFormValues, type LeadFieldErrors } from '../../lib/lead-management'
 
 export default function LeadCreatePage() {
   const navigate = useNavigate()
@@ -21,9 +21,7 @@ export default function LeadCreatePage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const isAdmin = employee?.role === 'admin'
-  const salespeople = useMemo<SalespersonOption[]>(() => employees.rows
-    .filter((row) => row.active)
-    .map((row) => ({ id: String(row.id), displayName: String(row.display_name), repCode: String(row.rep_code) })), [employees.rows])
+  const assignees = useMemo(() => leadAssigneeOptions(employees.rows), [employees.rows])
 
   function update<Key extends keyof LeadFormValues>(field: Key, value: LeadFormValues[Key]) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -58,7 +56,7 @@ export default function LeadCreatePage() {
       })
       if (!result.lead_id) throw new Error('The lead was accepted but no record ID was returned.')
       if (employee?.role === 'sales_rep' && result.assigned_employee_id !== employee.id) {
-        setMessage('Lead recorded and routed to the customer’s existing salesperson. It is outside your assigned queue.')
+        setMessage('Lead recorded and routed to the customer’s existing owner. It is outside your assigned queue.')
         return
       }
       navigate(`/employee-portal/leads/${result.lead_id}`, { replace: true })
@@ -80,7 +78,7 @@ export default function LeadCreatePage() {
         <span className="workspace-live-chip"><BriefcaseBusiness size={14} /> New opportunity</span>
       </div>
       {previewMode ? <ConfigurationState service="Local preview" copy="The complete intake flow is available for review, but CRM writes require an authenticated production session." /> : null}
-      {isAdmin ? <div className="lead-permission-note"><ShieldCheck size={17} /><div><strong>Administrator intake</strong><span>You can choose the salesperson who will own this lead.</span></div></div> : <div className="lead-permission-note"><UserRoundCheck size={17} /><div><strong>Sales intake</strong><span>New leads are assigned to you unless the email already belongs to another active salesperson.</span></div></div>}
+      {isAdmin ? <div className="lead-permission-note"><ShieldCheck size={17} /><div><strong>Administrator intake</strong><span>Assign this lead to any active salesperson or administrator. Automatic round-robin selects salespeople only.</span></div></div> : <div className="lead-permission-note"><UserRoundCheck size={17} /><div><strong>Sales intake</strong><span>New leads are assigned to you unless the email already belongs to another active employee.</span></div></div>}
       {message ? <p className="record-action-message" role="status">{message}</p> : null}
       {error ? <p className="lead-form-alert error" role="alert">{error}</p> : null}
       <form className="workspace-card lead-create-form" onSubmit={createLead} noValidate>
@@ -88,7 +86,7 @@ export default function LeadCreatePage() {
         <LeadFormFields
           values={form}
           errors={errors}
-          salespeople={salespeople}
+          assignees={assignees}
           showAssignment={isAdmin}
           disabled={busy}
           onChange={update}

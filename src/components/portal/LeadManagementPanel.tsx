@@ -4,9 +4,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { usePortalRows } from '../../hooks/usePortalRows'
 import { runLeadAction } from '../../lib/lead-api'
-import { leadErrors, leadFormSchema, type LeadFieldErrors, type LeadFormValues } from '../../lib/lead-management'
+import { leadAssigneeOptions, leadErrors, leadFormSchema, type LeadFieldErrors, type LeadFormValues } from '../../lib/lead-management'
 import type { JsonRecord } from '../../lib/database.types'
-import { LeadFormFields, type SalespersonOption } from './LeadFormFields'
+import { LeadFormFields } from './LeadFormFields'
 
 interface LeadManagementPanelProps {
   leadId: string
@@ -48,9 +48,7 @@ export function LeadManagementPanel({ leadId, record, linkedDeal, onSaved }: Lea
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const isConverted = record.status === 'converted' || Boolean(linkedDeal)
-  const salespeople = useMemo<SalespersonOption[]>(() => employees.rows
-    .filter((row) => row.active)
-    .map((row) => ({ id: String(row.id), displayName: String(row.display_name), repCode: String(row.rep_code) })), [employees.rows])
+  const assignees = useMemo(() => leadAssigneeOptions(employees.rows), [employees.rows])
 
   function update<Key extends keyof LeadFormValues>(field: Key, value: LeadFormValues[Key]) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -91,14 +89,14 @@ export function LeadManagementPanel({ leadId, record, linkedDeal, onSaved }: Lea
 
   async function convert() {
     if (!form.assigned_employee_id) {
-      setErrors((current) => ({ ...current, assigned_employee_id: 'Assign an active salesperson before conversion.' }))
+      setErrors((current) => ({ ...current, assigned_employee_id: 'Assign an active employee before conversion.' }))
       return
     }
     if (previewMode) {
       setMessage('Local preview only — conversion is ready, but no deal was created.')
       return
     }
-    if (!window.confirm('Convert this lead into a new draft deal? The lead will be locked as converted and the salesperson will own the deal.')) return
+    if (!window.confirm('Convert this lead into a new draft deal? The lead will be locked as converted and the assigned employee will own the deal.')) return
 
     setBusy('convert')
     setError(null)
@@ -121,7 +119,7 @@ export function LeadManagementPanel({ leadId, record, linkedDeal, onSaved }: Lea
       <LeadFormFields
         values={form}
         errors={errors}
-        salespeople={salespeople}
+        assignees={assignees}
         showStatus
         showAssignment
         disabled={Boolean(busy) || isConverted}

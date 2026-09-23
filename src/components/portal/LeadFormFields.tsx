@@ -1,15 +1,9 @@
-import { leadProjectTypes, leadSources, leadStatuses, leadTimings, type LeadFieldErrors, type LeadFormValues } from '../../lib/lead-management'
-
-export interface SalespersonOption {
-  id: string
-  displayName: string
-  repCode: string
-}
+import { leadProjectTypes, leadSources, leadStatuses, leadTimings, type LeadAssigneeOption, type LeadFieldErrors, type LeadFormValues } from '../../lib/lead-management'
 
 interface LeadFormFieldsProps {
   values: LeadFormValues
   errors: LeadFieldErrors
-  salespeople: SalespersonOption[]
+  assignees: LeadAssigneeOption[]
   showStatus?: boolean
   showAssignment?: boolean
   disabled?: boolean
@@ -23,7 +17,7 @@ function errorId(field: keyof LeadFormValues) {
 export function LeadFormFields({
   values,
   errors,
-  salespeople,
+  assignees,
   showStatus = false,
   showAssignment = false,
   disabled = false,
@@ -74,10 +68,10 @@ export function LeadFormFields({
         {errorFor('status')}
       </label> : null}
       {showAssignment ? <label className={showStatus ? '' : 'field-wide'}>
-        <span>Assigned salesperson</span>
+        <span>Assigned employee</span>
         <select {...fieldProps('assigned_employee_id')} disabled={disabled} value={values.assigned_employee_id} onChange={(event) => onChange('assigned_employee_id', event.target.value)}>
-          <option value="">Automatic round-robin</option>
-          {salespeople.map((salesperson) => <option key={salesperson.id} value={salesperson.id}>{salesperson.displayName} · {salesperson.repCode}</option>)}
+          <option value="">Automatic round-robin (salespeople)</option>
+          {assignees.map((employee) => <option key={employee.id} value={employee.id}>{employee.displayName} · {employee.roleLabel} · {employee.repCode}</option>)}
         </select>
         {errorFor('assigned_employee_id')}
       </label> : null}

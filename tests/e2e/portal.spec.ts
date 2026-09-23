@@ -123,9 +123,24 @@ test('direct employee routes refresh and interactive navigation works', async ({
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
-test('manual lead intake and admin lead controls are fully rendered', async ({ page }) => {
+test('manual lead intake and editing allow administrator ownership', async ({ page }, testInfo) => {
+  await page.route('https://crm-test.supabase.co/auth/v1/settings', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ external: { google: true } }),
+  }))
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
   await page.goto('/employee-portal/leads/new')
+  await expect(page).toHaveURL(/\/employee-portal\/leads\/new$/)
+  await expect(page).toHaveTitle('CMAC Container Homes | Texas-Built Modular Living')
   await expect(page.getByRole('heading', { name: 'Create a lead' })).toBeVisible()
+  const owner = page.getByRole('combobox', { name: 'Assigned employee', exact: true })
+  await expect(owner.locator('option')).toHaveText([
+    'Automatic round-robin (salespeople)',
+    'Demo Sales Rep · Salesperson · CMAC-0002',
+    'Morgan Admin · Administrator · CMAC-0001',
+  ])
+  await owner.selectOption('11111111-1111-4111-8111-111111111111')
   await page.getByLabel('First name *').fill('Morgan')
   await page.getByLabel('Last name').fill('Sample')
   await page.getByLabel('Email *').fill('morgan.sample@example.com')
@@ -140,11 +155,22 @@ test('manual lead intake and admin lead controls are fully rendered', async ({ p
   await page.goto('/employee-portal/leads/preview-lead-2')
   await expect(page.getByRole('heading', { name: 'Avery Brooks' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Edit, assign, and qualify' })).toBeVisible()
+  await expect(owner).toHaveValue('22222222-2222-4222-8222-222222222222')
+  await owner.selectOption('11111111-1111-4111-8111-111111111111')
+  await expect(owner).toHaveValue('11111111-1111-4111-8111-111111111111')
   await expect(page.getByLabel('Pipeline status *')).toHaveValue('new')
   await page.getByLabel('Pipeline status *').selectOption('contacted')
   await page.getByRole('button', { name: 'Save lead' }).click()
   await expect(page.getByText('Local preview only — the edit form is valid, but no CRM record was changed.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Convert to deal' })).toBeVisible()
+  await page.getByRole('button', { name: 'Convert to deal' }).click()
+  await expect(page.getByText('Local preview only — conversion is ready, but no deal was created.')).toBeVisible()
+  await expect(page.locator('vite-error-overlay')).toHaveCount(0)
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect(errors).toEqual([])
+  if (['desktop-1440', 'mobile-375'].includes(testInfo.project.name)) {
+    await page.locator('.lead-management-card').screenshot({ path: `/private/tmp/cmac-lead-admin-${testInfo.project.name}.png` })
+  }
 })
 
 test('every employee portal destination renders without horizontal overflow', async ({ page }) => {

@@ -1,4 +1,25 @@
 import { z } from 'zod'
+import type { JsonRecord } from './database.types'
+
+export interface LeadAssigneeOption {
+  id: string
+  displayName: string
+  repCode: string
+  roleLabel: string
+}
+
+// Manual ownership includes admins. Automatic round-robin remains sales-only.
+export function leadAssigneeOptions(employees: JsonRecord[]): LeadAssigneeOption[] {
+  return employees
+    .filter((employee) => employee.active === true && (employee.role === 'admin' || employee.role === 'sales_rep'))
+    .map((employee) => ({
+      id: String(employee.id),
+      displayName: String(employee.display_name),
+      repCode: String(employee.rep_code),
+      roleLabel: employee.role === 'admin' ? 'Administrator' : 'Salesperson',
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+}
 
 export const leadSources = [
   { value: 'phone', label: 'Phone call' },
@@ -51,7 +72,7 @@ export const leadFormSchema = z.object({
   desired_timing: z.string().trim().min(1, 'Select the desired timing.').max(80),
   summary: z.string().trim().max(2_000),
   lost_reason: z.string().trim().max(500),
-  assigned_employee_id: z.union([z.literal(''), z.string().uuid('Choose an active salesperson.')]),
+  assigned_employee_id: z.union([z.literal(''), z.string().uuid('Choose an active employee.')]),
 }).superRefine((value, context) => {
   if (value.status === 'lost' && value.lost_reason.length < 2) {
     context.addIssue({ code: 'custom', path: ['lost_reason'], message: 'Explain why this lead was lost.' })
