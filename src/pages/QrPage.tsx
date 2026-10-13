@@ -5,6 +5,7 @@ import { emptyQrAnswers, qrOptions, qrQuestions, validateQrAnswers, type QrAnswe
 import { qrRequest, qrVisitId } from '../lib/qr-api'
 
 const steps = ['The starting point', 'Your space', 'Let’s connect']
+const qrPhone = { display: '(310) 710-8833', href: 'tel:3107108833' }
 const stepFields: (keyof QrAnswers)[][] = [['location', 'timing'], ['units', 'use'], ['payment', 'credit', 'name', 'email', 'phone']]
 export default function QrPage() {
   const [step, setStep] = useState(0)
@@ -72,7 +73,7 @@ export default function QrPage() {
   }
   return <div className="qr-page">
     <a className="skip-link" href="#qr-main">Skip to inquiry form</a>
-    <header className="qr-header"><Logo /><a href="tel:6822187221"><Phone size={16} /><span>(682) 218-7221</span></a></header>
+    <header className="qr-header"><Logo /><a href={qrPhone.href}><Phone size={16} /><span>{qrPhone.display}</span></a></header>
     <main id="qr-main" className="qr-layout">
       <aside className="qr-intro">
         <span className="qr-eyebrow"><span /> TEXAS BUILT. YOUR NEXT CHAPTER.</span>
@@ -82,7 +83,7 @@ export default function QrPage() {
         <p className="qr-intro-note"><ShieldCheck size={17} /> No commitment. Just a conversation.</p>
       </aside>
       <section className="qr-form-card" aria-label="Container home inquiry">
-        {receipt ? <div className="qr-success" role="status"><CheckCircle2 size={46} /><span className="qr-eyebrow">YOUR NEXT CHAPTER / STARTED</span><h2 ref={heading} tabIndex={-1}>You’re on our list.</h2><p>Your answers and contact details have been saved.</p><p>{receipt === 'sent' ? 'Charley has been notified by email and can follow up with you.' : 'Charley’s email notification is awaiting confirmation. There’s no need to submit again—your inquiry is safely recorded.'}</p><a className="btn btn-red" href="tel:6822187221"><Phone size={16} /> Talk to us now</a><a className="qr-text-link" href="/">Explore CMAC Container Homes <ArrowRight size={16} /></a></div> : <>
+        {receipt ? <div className="qr-success" role="status"><CheckCircle2 size={46} /><span className="qr-eyebrow">YOUR NEXT CHAPTER / STARTED</span><h2 ref={heading} tabIndex={-1}>You’re on our list.</h2><p>Your answers and contact details have been saved.</p><p>{receipt === 'sent' ? 'Charley has been notified by email and can follow up with you.' : 'Charley’s email notification is awaiting confirmation. There’s no need to submit again—your inquiry is safely recorded.'}</p><a className="btn btn-red" href={qrPhone.href}><Phone size={16} /> Talk to us now</a><a className="qr-text-link" href="/">Explore CMAC Container Homes <ArrowRight size={16} /></a></div> : <>
           <div className="qr-progress" aria-label={`Step ${step + 1} of 3`}><span>LET’S BUILD YOUR NEXT STEP</span><b>0{step + 1} / 03</b><div>{steps.map((label, index) => <span key={label} className={index <= step ? 'is-complete' : ''} />)}</div></div>
           <h2 ref={heading} tabIndex={-1}>{steps[step]}</h2><p className="qr-step-copy">{step === 0 ? 'Spotted a home you like? You’re in the right place.' : step === 1 ? 'Tell us how your new space will fit into your life.' : 'One last detail, then tell Charley how to reach you.'}</p>
           <form ref={form} onSubmit={submit} noValidate>
