@@ -39,21 +39,7 @@ The public and internal experiences share a visual identity, while their navigat
 
 ## Behind the presentation
 
-```mermaid
-flowchart LR
-    A[Public showroom + QR intake] --> B[Supabase Edge Functions]
-    B --> C[(CRM / Postgres)]
-    B --> D[Gmail notification]
-    E[Employee workspace] --> F[Supabase Auth + CRM policies]
-    F --> C
-    E --> G[Vercel inventory API]
-    G --> H[Validate CRM session + employee]
-    H --> I[(Separate Bolt-Data aggregate)]
-    classDef ui fill:#17171f,stroke:#ec776f,color:#f6efef
-    classDef service fill:#191f2a,stroke:#8aa8c9,color:#f1f5fb
-    class A,E ui
-    class B,C,D,F,G,H,I service
-```
+![Architecture: public inquiries pass through intake functions into CRM data and Gmail notifications. The employee workspace uses CRM identity checks and a server-side inventory API to read the separate Bolt-Data aggregate.](readme-assets/architecture.svg)
 
 ### Three decisions that matter
 
