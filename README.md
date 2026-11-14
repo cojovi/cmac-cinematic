@@ -1,238 +1,120 @@
-<!-- COJOVI / SIGNAL — CMAC Cinematic project edition. Keep readme-assets/ beside this file. -->
-<a name="top"></a>
+<picture>
+  <source media="(max-width: 640px)" srcset="readme-assets/cover-mobile.svg">
+  <img src="readme-assets/cover.svg" alt="CMAC Cinematic — a cinematic storefront and the sales workflow behind it. React, TypeScript, Supabase, Vercel." width="100%">
+</picture>
 
-<p align="center">
-  <img src="readme-assets/banner.svg" alt="CMAC Cinematic — container homes, customer inquiries, and the sales workspace behind the site." width="100%">
-</p>
+# CMAC Cinematic
 
-<h1 align="center">CMAC Cinematic</h1>
+**From the first impression to the follow-through.**
 
-<p align="center">
-  <strong>A cinematic storefront. A deliberate sales workflow.</strong><br>
-  Container-home discovery, public inquiries, and a role-aware CMAC employee portal.
-</p>
+A container home deserves more than a product listing. CMAC Cinematic pairs an architectural, image-led showroom with the employee workspace behind the sale: inquiries, leads, customers, follow-ups, deal drafts, and quote records.
 
-<p align="center">
-  <img src="readme-assets/stack.svg" alt="React 19 · Vite 8 · TypeScript · Supabase" width="640">
-</p>
+I built across the public experience and application workflow, bringing visual design, React implementation, data modeling, authentication, and service integration into one project.
 
-<p align="center">
-  <a href="#overview">Overview</a> ·
-  <a href="#architecture">Architecture</a> ·
-  <a href="#quickstart">Quickstart</a> ·
-  <a href="#configuration">Configuration</a> ·
-  <a href="#usage">Usage</a> ·
-  <a href="#validation">Tests</a> ·
-  <a href="#security">Security</a>
-</p>
+**[Visit the live showroom ↗](https://cmac-cinematic.vercel.app)** · [Explore the engineering](#behind-the-presentation) · [Run it locally](#run-it-locally)
 
----
+`React 19` · `TypeScript` · `Vite 8` · `Supabase` · `Tailwind CSS` · `Vercel`
 
-<a name="overview"></a>
-## `> open_the_showroom`
+<img src="readme-assets/experience.svg" alt="The experience — public showroom and sales workspace" width="100%">
 
-**CMAC Cinematic brings a public container-home website and an employee sales workspace into one React application.** Visitors explore the homes and submit inquiries; employees work with leads, customers, follow-ups, deal drafts, quotes, marketing, and inventory context.
+## A storefront with a point of view
 
-The presentation is cinematic. The operational boundary is explicit: browser UI, CRM services, and the separate Bolt-Data inventory source each have a different job.
+Large architectural imagery, a restrained red-and-charcoal palette, and deliberate typography give the homes room to speak. The public experience connects model discovery, the build process, and inquiry capture.
 
-| Discover | Coordinate | Follow through |
-| :--- | :--- | :--- |
-| Public home showcase, inquiry form, and mobile-first QR intake. | Employee dashboard, lead management, customer ownership, tasks, and deal drafts. | Admin team controls, QR reporting, and configured Gmail notifications. |
+[![CMAC's public showroom: architectural imagery, cinematic typography, and model discovery](readme-assets/showroom-desktop.jpg)](https://cmac-cinematic.vercel.app)
 
-> [!IMPORTANT]
-> **This is the Vite/React repository, not CMAC New Concept's Next.js application.** The npm package is `cmac-container-homes`; routing uses React Router, styling uses Tailwind CSS and project CSS, and Vercel hosts a separate inventory function.
+*Actual public-site capture, November 14, 2026.*
 
-### What is implemented—and what remains deferred
+## The workspace behind the sale
 
-- **CRM:** Supabase Auth, database/RLS, private Storage, and server-side Edge Functions support employee workflows.
-- **Inventory:** `/api/inventory` reads an aggregate Bolt-Data view. Individual model cards and their prices are mock references, not a live unit catalog.
-- **QR intake:** a dedicated admin inbox saves inquiries before attempting a Gmail notification. It does not automatically enter the round-robin lead pipeline.
-- **Sales:** deal drafts and quote records are available; creating a quote does not generate a PDF or send email.
-- **Deferred:** the client portal and DocuSign signing present Coming Soon states. Existing DocuSign source files are not evidence of an enabled signing workflow.
+Employees move through leads, customers, follow-ups, inventory context, deal drafts, and quote records in a shared application. Administrators manage employee access, ownership transfers, marketing resources, and QR inquiries.
 
-<a name="architecture"></a>
-## `> trace_the_signal`
+![CMAC's sales builder in local preview: model selection, a staged transaction workflow, and a draft summary](readme-assets/sales-preview.jpg)
 
-<p align="center">
-  <img src="readme-assets/flow.svg" alt="React storefront and employee portal → Supabase CRM and Edge Functions → separate Bolt aggregate inventory and configured Gmail delivery." width="100%">
-</p>
+*Local development preview. Model references and prices are fixtures; this capture contains no customer records. Saving and provider actions are disabled in this mode.*
 
-```text
-Vite / React / React Router
-├─ Public storefront + /qr
-├─ Google sign-in + /auth/callback
-└─ Employee portal + admin routes
-   ├─ Supabase CRM: Auth, Postgres/RLS, private Storage
-   ├─ Supabase Edge Functions: intake, workflow, email
-   └─ Vercel /api/inventory → separate Bolt-Data aggregate
+The public and internal experiences share a visual identity, while their navigation and information density serve different jobs. The showroom helps someone explore; the workspace keeps the next action and its context visible.
+
+<img src="readme-assets/engineering.svg" alt="Behind the presentation — architecture and decisions" width="100%">
+
+## Behind the presentation
+
+```mermaid
+flowchart LR
+    A[Public showroom + QR intake] --> B[Supabase Edge Functions]
+    B --> C[(CRM / Postgres)]
+    B --> D[Gmail notification]
+    E[Employee workspace] --> F[Supabase Auth + CRM policies]
+    F --> C
+    E --> G[Vercel inventory API]
+    G --> H[Validate CRM session + employee]
+    H --> I[(Separate Bolt-Data aggregate)]
+    classDef ui fill:#17171f,stroke:#ec776f,color:#f6efef
+    classDef service fill:#191f2a,stroke:#8aa8c9,color:#f1f5fb
+    class A,E ui
+    class B,C,D,F,G,H,I service
 ```
 
-**CRM and Bolt-Data are separate Supabase projects.** The inventory function validates the CRM session and active employee before reading only `mini_homes_inventory` from Bolt-Data. It does not call ECI Bolt directly or query raw Bolt tables.
+### Three decisions that matter
 
-Gmail delivery uses server-side Workspace delegation. Interactive Google sign-in uses a separate OAuth Web client configured in Supabase Auth; the service account is not a substitute for that client.
+**1. Save the inquiry before attempting its notification.** QR intake persists the record, then attempts Gmail delivery. Notification status is tracked separately so an email failure does not erase the inquiry. An uncertain send requires explicit verification before retrying. [Follow the intake flow →](docs/QR_INTAKE.md)
 
-| Source | Responsibility |
+**2. Keep operational data sources separate.** CRM and Bolt-Data are different Supabase projects. The inventory API validates the CRM session and active employee before reading the aggregate inventory view. Server credentials stay in the server function. [Inspect the inventory boundary →](api/inventory.ts)
+
+**3. Make ownership and permissions explicit.** The portal combines route guards with server checks and database policies. Deactivating an employee does not silently transfer their work; ownership changes are deliberate administrator actions. [Read the team model →](docs/TEAM_MANAGEMENT.md)
+
+### Explore the implementation
+
+| Area | Start here |
 | :--- | :--- |
-| [`src/App.tsx`](src/App.tsx) | Public, employee, and administrator routes. |
-| [`src/auth/`](src/auth/) / [`src/lib/`](src/lib/) | Session handling, route guards, validation, and workflow adapters. |
-| [`api/inventory.ts`](api/inventory.ts) | Authenticated, server-only aggregate inventory read. |
-| [`supabase/functions/`](supabase/functions/) | Public intake and authenticated business actions. |
-| [`supabase/migrations/`](supabase/migrations/) | CRM schema, ownership rules, RLS, and transactional contracts. |
+| Public experience and routing | [`src/App.tsx`](src/App.tsx), [`src/components/`](src/components/) |
+| Authentication and workflow logic | [`src/auth/`](src/auth/), [`src/lib/`](src/lib/) |
+| Server-side inventory | [`api/inventory.ts`](api/inventory.ts) |
+| Business actions and data policies | [`supabase/functions/`](supabase/functions/), [`supabase/migrations/`](supabase/migrations/) |
+| Unit and API checks | [`tests/api/`](tests/api/), tests alongside [`src/lib/`](src/lib/) |
 
-<a name="quickstart"></a>
-## `> bring_up_the_frontend`
+## Run it locally
 
-**Prerequisites:** Git, npm, and a Node.js release compatible with the locked tools. Node **22.13+ within the 22.x line** satisfies the Vite, ESLint, and Vitest engine declarations inspected here; that is not a claim of an executed compatibility test.
-
-### 1. Install the application
+Use a current Node.js version compatible with the lockfile; this revision was verified with **Node 26.3.0 / npm 11.16.0**.
 
 ```bash
 git clone https://github.com/cojovi/cmac-cinematic.git
 cd cmac-cinematic
 npm ci
-cp .env.example .env.local
+npm run dev
 ```
 
-### 2. Choose the environment before starting
+The public frontend can be explored without backend credentials. For the employee preview, put the following in an uncommitted `.env.local`, restart Vite, and open `/employee-portal`:
 
-For a disconnected public-site review, leave the Supabase URL/key blank. Sign-in and submissions will need configuration; this is not a complete local backend.
-
-For CRM development, use an **isolated development project** and set the browser URL and publishable key in `.env.local`. Review the [configuration boundary](#configuration) before adding provider credentials.
-
-```bash
-npm run dev -- --host 127.0.0.1
+```dotenv
+VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
-Open the local URL printed by Vite, normally **http://127.0.0.1:5173**. Allow-list the exact origin and `/auth/callback` you actually use when configuring development OAuth.
+This development-only preview provides a fixture employee and disables portal writes. Leave real service credentials out of this environment. A complete integration environment also needs Supabase services and the Vercel API; `npm run dev` serves only the frontend. See the [development and operations guide](docs/DEVELOPMENT.md) for configuration and routes.
 
-### 3. Optional portal layout preview
+## Verification and scope
 
-Set `VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true` in the uncommitted local file, restart Vite, and visit `/employee-portal`. The flag requires Vite development mode and supplies a preview employee; portal preview actions are designed not to save business records.
-
-**Preview is not a network sandbox.** Keep real service credentials out of visual-review environments. Public intake and configured integrations have their own code paths; do not submit forms against production merely to inspect the interface.
-
-> [!NOTE]
-> `npm run dev` serves the frontend, not the Vercel `/api/inventory` function or Supabase Edge Functions. Missing backend services are expected to show unavailable/configuration states. A complete integration environment needs those services separately.
-
-<a name="configuration"></a>
-## `> separate_public_from_private`
-
-Use [`.env.example`](.env.example) as a variable inventory, not a production-ready configuration. Local environment files do not configure hosted Supabase Edge secrets or Vercel automatically.
-
-| Location | Variables / setup | Boundary |
-| :--- | :--- | :--- |
-| Browser build | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` | CRM public endpoint/key only; access still depends on Auth and RLS. |
-| Browser auth routing | `VITE_CANONICAL_SITE_URL` | Stable origin used to begin production OAuth. |
-| Local visual review | `VITE_ENABLE_LOCAL_PORTAL_PREVIEW` | Development-only flag; keep false for deployment. |
-| Vercel inventory function | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Server-side CRM session/employee validation. |
-| Vercel inventory function | `BOLT_DATA_SUPABASE_URL`, `BOLT_DATA_SUPABASE_SERVICE_ROLE_KEY` | Separate Bolt-Data credentials; never use a `VITE_` prefix. |
-| Supabase Edge secrets | `GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_WORKSPACE_PRIVATE_KEY` | Gmail delegation; authorize only the required `gmail.send` scope. |
-| Supabase Edge secrets | `ALLOWED_ORIGINS` | Approved browser origins for CORS; not authentication. |
-| Supabase Edge secrets | `LEAD_RATE_LIMIT_SECRET`, `QR_RATE_LIMIT_SECRET` | Optional dedicated HMAC salts; server service-role fallback exists. |
-| Supabase Auth dashboard | Google OAuth Web client, redirects, signup hook | Exact Workspace domain gate and active employee mapping. |
-
-The example also lists `SUPABASE_PUBLISHABLE_KEY` and `GOOGLE_WORKSPACE_CLIENT_ID` as setup values. They are not read by the inventory handler or a replacement for interactive OAuth configuration. Supabase supplies built-in server values such as `SUPABASE_ANON_KEY` to its hosted functions.
-
-> [!WARNING]
-> **The checked-in example still sets `VITE_CANONICAL_SITE_URL=https://cmac-cinematic.vercel.app`.** The auth code defaults to `https://www.cmaccontainers.com`, and the production setup guide explicitly supersedes the old Vercel origin. Review and set the intended canonical origin; do not copy that example value blindly into production.
-
-Generated CMAC Vercel previews can redirect sign-in toward the canonical production origin. Isolate preview Auth and databases deliberately; a branch does not create a separate CRM. Do not move an in-progress PKCE callback between origins.
-
-For a new backend, follow [production setup](docs/PRODUCTION_SETUP.md): review migrations, bootstrap an administrator, configure Google Auth and its exact-domain hook, deploy the required functions, and provision private Storage and provider secrets. Keep DocuSign variables empty while signing is deferred.
-
-<a name="usage"></a>
-## `> work_the_pipeline`
-
-| Route / workflow | Expected behavior |
-| :--- | :--- |
-| `/` | Public showcase and lead inquiry; authenticated employees may be redirected to their workspace. |
-| `/qr` | Public three-step questionnaire; required contact fields and financing-dependent credit answer. |
-| `/login` → `/auth/callback` | Google PKCE sign-in and active-employee lookup. |
-| `/employee-portal` | Dashboard and navigation for leads, customers, tasks, inventory, marketing, deals, quotes, and documents. |
-| `/employee-portal/sales/new` | Select a model reference, record customer/site details, save a draft, and create quote records. |
-| `/employee-portal/admin/employees` | Administrator team overview, access controls, and deliberate ownership management. |
-| `/employee-portal/admin/qr` | Administrator inquiry reporting, notification status, and controlled retries. |
-| `/client-portal` | Coming Soon—not an implemented customer workspace. |
-
-### Failure states are part of the workflow
-
-- **Inventory:** missing configuration, invalid sessions, inactive employees, and upstream failures are distinct responses. The UI flags aggregate timestamps older than one hour; failed reads do not become invented availability.
-- **QR notifications:** saved inquiry does not mean delivered email. `sent` means Gmail accepted the message and its result was recorded—not that it reached the inbox or was read.
-- **Uncertain sends:** `unknown` or stranded `sending` states require mailbox verification before intervention. There is no automatic queue worker or blind resend loop.
-- **Ownership:** deactivating an employee does not transfer their work. Administrators transfer it explicitly; historical closed records retain their attribution.
-
-For detailed limits, reporting definitions, and retry rules, use the [QR guide](docs/QR_INTAKE.md) and [team-management guide](docs/TEAM_MANAGEMENT.md).
-
-<a name="validation"></a>
-## `> check_before_you_ship`
-
-The repository provides these commands. **They were inspected, not executed for this README refresh; no passing build or test status is implied.**
+**59 unit/API tests passed across six files, and the production build passed** on November 14, 2026. The checks cover workflow helpers and API behavior; the build runs TypeScript and Vite. [Verification record →](docs/SHOWCASE_VERIFICATION.md)
 
 ```bash
-npm run lint
 npm test
 npm run build
-npm run test:e2e
 ```
 
-Vitest covers `src` and `tests/api`; Playwright runs browser scenarios at 375, 768, 1024, and 1440 pixels. Its configuration starts development and production-preview servers with fixture Supabase values. Browser fixtures do not certify real OAuth, database policy deployment, or Gmail delivery.
-
-For database checks, install a supported Docker environment and `psql`, then use a **disposable local database**:
-
-```bash
-npm run db:start
-npm run db:reset
-npm run db:test
-```
-
-`db:start` intentionally starts a reduced Postgres-focused Supabase stack, not a complete local portal backend. `db:reset` resets local data. The test script rejects non-loopback `DATABASE_TEST_URL` hosts, checks pgTAP assertion results, and runs QR concurrency fixtures.
-
-### Deployment checklist
-
-- [ ] Browser configuration contains no service-role, Gmail, or DocuSign secrets.
-- [ ] CRM migrations, Auth hooks, RLS, Storage, and required Edge Functions match the frontend.
-- [ ] Google origins, redirect allow-list, and canonical site URL agree.
-- [ ] Bolt credentials remain server-only; mock model cards are not presented as verified units.
-- [ ] Direct navigation and refresh work on public, callback, employee, and admin routes.
-- [ ] Public intake and authorized email acceptance are tested only with approved test contacts.
-- [ ] Inactive employee, representative/admin boundary, stale inventory, and failure paths are checked.
-
-[`vercel.json`](vercel.json) rewrites non-API paths to `/index.html` while preserving `/api/*`. A static frontend build alone does not deploy the inventory function or Supabase services.
-
-<a name="security"></a>
-## `> draw_the_boundary`
-
-**Route guards improve navigation; server authentication, live employee checks, and database policies enforce data access.** Public `submit-lead` and `qr-intake` endpoints intentionally allow unauthenticated intake. QR retry separately validates an active administrator.
-
-Keep `.env.local`, service-account material, private keys, customer records, and provider responses out of commits and public issues. The repository ignores `.env*` except `.env.example`; ignore rules do not remove secrets already tracked elsewhere.
-
-QR answers include self-reported financing information and are restricted to administrators. The questionnaire does not perform a credit check or collect SSNs or credit documents. Decide customer-data retention explicitly; the feature does not automatically delete inquiry records.
-
-Public intake includes validation, honeypots, and hashed rate-limit identifiers. These are baseline abuse controls, not a guarantee against distributed bots. Review HTTPS, origin configuration, provider permissions, and retention before exposure.
-
-<a name="documentation"></a>
-## `> keep_the_context`
-
-| Reference | Read it for |
+| Available in this build | Current boundary |
 | :--- | :--- |
-| [Production setup](docs/PRODUCTION_SETUP.md) | Auth, environment boundaries, migrations, deployment, and historical release notes. |
-| [QR intake](docs/QR_INTAKE.md) | Reporting semantics, email failure handling, privacy, and acceptance checklist. |
-| [Team management](docs/TEAM_MANAGEMENT.md) | Roles, ownership transfers, activity scope, and rollout order. |
-| [Bolt unit-feed proposal](docs/BOLT_INVENTORY_UNIT_FEED.md) | Deferred per-unit contract—not an implemented live feed. |
-| [Design specification](DESIGN_SPEC.md) | Visual reference for the cinematic public experience. |
+| Public showroom, inquiries, employee workflows, admin controls | Connected workflows require configured Auth, database policies, and server functions. |
+| Aggregate inventory and model references | Model cards are fixtures, not verified individual units. |
+| Deal drafts and quote records | Quote creation does not generate or email a PDF. Client portal and DocuSign signing remain deferred. |
 
-Historical deployment and test results in these guides are project records, not fresh verification of the current checkout. No repository license file was found at the audited revision; do not assume an MIT or other open-source license.
+## Go deeper
+
+[Development & configuration](docs/DEVELOPMENT.md) · [Production setup](docs/PRODUCTION_SETUP.md) · [QR intake](docs/QR_INTAKE.md) · [Team management](docs/TEAM_MANAGEMENT.md) · [Design specification](DESIGN_SPEC.md)
 
 ---
 
-<p align="center">
-  <img src="readme-assets/signal-divider.svg" alt="" width="100%">
-</p>
+**Designed and built by [COJOVI](https://github.com/cojovi).**
 
-<p align="center">
-  <strong>Show the homes. Preserve the context. Respect the boundary.</strong><br>
-  <sub><a href="https://github.com/cojovi/cmac-cinematic">cojovi / cmac-cinematic</a> · <a href="https://cojovi.com">cojovi.com</a><br>
-  Vite + React application. Presented in COJOVI / SIGNAL.</sub>
-</p>
-
-<p align="center"><a href="#top">↑ Back to the signal</a></p>
+[More work ↗](https://cojovi.com) · [Back to the live experience ↗](https://cmac-cinematic.vercel.app)
