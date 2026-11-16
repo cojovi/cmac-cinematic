@@ -59,7 +59,7 @@ The example also lists `SUPABASE_PUBLISHABLE_KEY` and `GOOGLE_WORKSPACE_CLIENT_I
 > [!WARNING]
 > **The checked-in example still sets `VITE_CANONICAL_SITE_URL=https://cmac-cinematic.vercel.app`.** The auth code defaults to `https://www.cmaccontainers.com`, and the production setup guide explicitly supersedes the old Vercel origin. Review and set the intended canonical origin; do not copy that example value blindly into production.
 
-Generated CMAC Vercel previews can redirect sign-in toward the canonical production origin. Isolate preview Auth and databases deliberately; a branch does not create a separate CRM. Do not move an in-progress PKCE callback between origins.
+Generated Vercel branch and preview deployments sign in on their own URL, so a branch can be tested with a real session. That requires the wildcard `https://cmac-cinematic-*-cojovis-projects.vercel.app/**` on the Supabase Auth redirect allow-list; without it Supabase falls back to the Site URL and sign-in finishes on production's build. **A preview is not a sandbox:** it uses the same production CRM database and Edge Functions as the live site. Do not move an in-progress PKCE callback between origins.
 
 For a new backend, follow [production setup](../docs/PRODUCTION_SETUP.md): review migrations, bootstrap an administrator, configure Google Auth and its exact-domain hook, deploy the required functions, and provision private Storage and provider secrets. Keep DocuSign variables empty while signing is deferred.
 

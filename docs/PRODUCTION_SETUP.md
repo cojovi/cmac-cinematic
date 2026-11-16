@@ -2,6 +2,16 @@
 
 The application is production-capable but intentionally reports external services as **not configured** until CMAC supplies credentials. Never place secrets in `.env` files committed to source control.
 
+## November 15, 2026 update — branch previews sign in on their own URL
+
+Generated Vercel branch/preview deployments (`cmac-cinematic-…-cojovis-projects.vercel.app`) no longer hand sign-in to www. They complete Google sign-in on their own origin so a branch can be tested with a real employee session. Production aliases (www, apex, `cmac-cinematic.vercel.app`) are unchanged and still start on www.
+
+One-time Supabase setting — Auth → URL Configuration → Redirect URLs, add:
+
+`https://cmac-cinematic-*-cojovis-projects.vercel.app/**`
+
+`*` does not cross a `.` or `/`, so the pattern only matches this project's deployments under the `cojovis-projects` scope. Until it is added, Supabase falls back to the Site URL and preview sign-in ends on production's build, as before. A preview still talks to the **production** CRM database and Edge Functions; it is a different frontend, not a sandbox. This supersedes the "generated preview URLs start Google login on www" sentence below.
+
 ## September 23, 2026 release update
 
 The public production site is **https://www.cmaccontainers.com**. Supabase's Site URL now matches it, and `/auth/callback` on both the www and apex CMAC domains is explicitly allowed; existing Vercel/local callbacks are preserved. Production aliases and generated preview URLs start Google login on www **before** creating the origin-bound PKCE verifier. Do not redirect an in-progress OAuth callback between domains or override `VITE_CANONICAL_SITE_URL` with the old Vercel address. The Google provider's own callback remains the Supabase URL below; employee roles/domain checks are unchanged.

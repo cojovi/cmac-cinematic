@@ -55,6 +55,8 @@ Rolling back is the reverse: redeploy the previous function and re-run the `mana
 
 With `VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true` the portal now behaves like the real thing: moves, notes, follow-ups, deals, and quotes update an in-memory copy of the sample data, so a whole workflow can be rehearsed or demonstrated. Nothing is sent to Supabase and a refresh resets it. The preview employee is an administrator.
 
+The sample data is deliberately tiny — the preview account, **one** sample sales representative (Demo Sales Rep), and **one** sample customer (Taylor Morgan) with an open lead, a converted lead, a deal, a quote, and two follow-ups. It lives only in `src/lib/portal-fixtures.ts` and is never written to any database; the production CRM shows real records only. `npm run dev:crm` starts this preview with the Supabase settings blanked so it cannot reach production.
+
 ## Verification
 
 - `npm run lint`, `npm test`, `npm run build`.

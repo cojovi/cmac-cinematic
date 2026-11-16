@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:crm": "VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true VITE_SUPABASE_URL= VITE_SUPABASE_PUBLISHABLE_KEY= vite --host 127.0.0.1 --port 5173 --open /employee-portal",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run src tests/api",

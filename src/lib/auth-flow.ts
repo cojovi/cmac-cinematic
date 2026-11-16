@@ -23,16 +23,17 @@ export function authCallbackUrl(origin: string) {
 export function canonicalAuthOrigin(currentOrigin: string, configuredOrigin = import.meta.env.VITE_CANONICAL_SITE_URL?.trim()) {
   const current = new URL(currentOrigin)
   const canonical = new URL(configuredOrigin || DEFAULT_PRODUCTION_ORIGIN)
-  const isGeneratedVercelDeployment = current.hostname.endsWith('.vercel.app')
-    && current.hostname !== canonical.hostname
-    && current.hostname.startsWith('cmac-cinematic-')
 
-  // Start OAuth on the same stable origin that receives its callback. The
-  // verifier lives in origin-scoped storage, so crossing from the apex or old
-  // Vercel address after Google returns would require a second sign-in.
-  return isGeneratedVercelDeployment || PRODUCTION_AUTH_HOSTS.has(current.hostname)
-    ? canonical.origin
-    : current.origin
+  // Production aliases start OAuth on the one stable origin that receives the
+  // callback: the verifier lives in origin-scoped storage, so crossing from the
+  // apex or old Vercel address after Google returns would need a second sign-in.
+  //
+  // Everything else — localhost and generated Vercel branch/preview deployments —
+  // signs in on its own origin, so a branch can be tested with a real session
+  // instead of being bounced to production's build. Preview URLs must be on the
+  // Supabase redirect allow-list (see docs/PRODUCTION_SETUP.md); if they are not,
+  // Supabase falls back to the Site URL and sign-in simply completes on production.
+  return PRODUCTION_AUTH_HOSTS.has(current.hostname) ? canonical.origin : current.origin
 }
 
 export function canonicalGoogleLoginUrl(currentOrigin: string) {

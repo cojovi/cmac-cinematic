@@ -18,10 +18,12 @@ describe('OAuth callback routing', () => {
     expect(providerErrorFromSearch('?error=access_denied&error_description=Workspace+access+denied')).toBe('Workspace access denied')
   })
 
-  it('moves generated Vercel deployments to the stable production origin before OAuth', () => {
-    const preview = 'https://cmac-cinematic-abc123-cojovis-projects.vercel.app'
-    expect(canonicalAuthOrigin(preview)).toBe('https://www.cmaccontainers.com')
-    expect(canonicalGoogleLoginUrl(preview)).toBe('https://www.cmaccontainers.com/login?continue=google')
+  it('lets generated Vercel branch deployments sign in on their own origin so a branch can be tested', () => {
+    for (const preview of ['https://cmac-cinematic-abc123-cojovis-projects.vercel.app', 'https://cmac-cinematic-git-mini-nov-upgrade-cojovis-projects.vercel.app']) {
+      expect(canonicalAuthOrigin(preview)).toBe(preview)
+      expect(canonicalGoogleLoginUrl(preview)).toBe(`${preview}/login?continue=google`)
+      expect(authCallbackUrl(canonicalAuthOrigin(preview))).toBe(`${preview}/auth/callback`)
+    }
     expect(canonicalAuthOrigin('http://localhost:5173')).toBe('http://localhost:5173')
   })
 

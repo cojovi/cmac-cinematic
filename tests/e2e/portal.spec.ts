@@ -106,9 +106,9 @@ test('direct employee routes refresh and interactive navigation works', async ({
   await expect(page.getByRole('heading', { name: 'Lead pipeline' })).toBeVisible()
 
   const search = page.getByPlaceholder('Search leads')
-  await search.fill('Avery')
+  await search.fill('Taylor')
   await expect(page.locator('.crm-kanban-card')).toHaveCount(1)
-  await expect(page.getByRole('link', { name: 'Avery Brooks', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Taylor Morgan', exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Add lead' })).toBeVisible()
 
   if ((testInfo.project.use.viewport?.width ?? 1440) <= 760) {
@@ -138,8 +138,7 @@ test('manual lead intake and editing allow administrator ownership', async ({ pa
   await expect(owner.locator('option')).toHaveText([
     'Automatic round-robin (salespeople)',
     'Demo Sales Rep · Salesperson · CMAC-0002',
-    'Jordan Reyes · Salesperson · CMAC-0003',
-    'Morgan Admin · Administrator · CMAC-0001',
+    'Local Preview · Administrator · CMAC-PREVIEW',
   ])
   await page.getByRole('button', { name: 'Create lead' }).click()
   await expect(page.getByText('Review the highlighted fields before saving this lead.')).toBeVisible()
@@ -159,9 +158,9 @@ test('manual lead intake and editing allow administrator ownership', async ({ pa
   await expect(page.getByText('Manual lead created')).toBeVisible()
 
   await page.goto('/employee-portal/leads/preview-lead-2')
-  await expect(page.getByRole('heading', { name: 'Avery Brooks', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Taylor Morgan', level: 2 })).toBeVisible()
   await page.getByRole('button', { name: 'Edit lead' }).click()
-  const drawer = page.getByRole('dialog', { name: 'Edit Avery Brooks' })
+  const drawer = page.getByRole('dialog', { name: 'Edit Taylor Morgan' })
   const drawerOwner = drawer.getByRole('combobox', { name: 'Assigned employee', exact: true })
   await expect(drawerOwner).toHaveValue('22222222-2222-4222-8222-222222222222')
   await drawerOwner.selectOption('11111111-1111-4111-8111-111111111111')
@@ -171,12 +170,12 @@ test('manual lead intake and editing allow administrator ownership', async ({ pa
   await expect(page.getByText('Lead updated.')).toBeVisible()
   await expect(drawer).toHaveCount(0)
   await expect(page.locator('.crm-record-sub .crm-badge')).toHaveText('Contacted')
-  await expect(page.locator('.crm-facts .crm-owner')).toContainText('Morgan Admin')
+  await expect(page.locator('.crm-facts .crm-owner')).toContainText('Local Preview')
 
   await page.getByRole('button', { name: 'Convert to deal' }).click()
-  await page.getByRole('dialog', { name: /Convert Avery Brooks/ }).getByRole('button', { name: 'Convert to deal' }).click()
+  await page.getByRole('dialog', { name: /Convert Taylor Morgan/ }).getByRole('button', { name: 'Convert to deal' }).click()
   await expect(page).toHaveURL(/\/employee-portal\/deals\//)
-  await expect(page.getByRole('heading', { name: 'Avery Brooks — Other custom space', level: 2 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Taylor Morgan — Hospitality or guest suite', level: 2 })).toBeVisible()
   await expect(page.locator('vite-error-overlay')).toHaveCount(0)
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   expect(errors).toEqual([])
