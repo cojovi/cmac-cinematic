@@ -1,40 +1,96 @@
 import type { JsonRecord } from './database.types'
 
+/**
+ * Local-preview data. It never reaches production: the preview flag requires
+ * Vite dev mode, and every row here is invented. Preview edits mutate this
+ * in-memory copy so the whole workflow can be exercised; a refresh resets it.
+ */
 const now = Date.now()
-const iso = (daysAgo = 0) => new Date(now - daysAgo * 86_400_000).toISOString()
+const HOUR = 3_600_000
+const DAY = 86_400_000
+const ago = (ms: number) => new Date(now - ms).toISOString()
+const ahead = (ms: number) => new Date(now + ms).toISOString()
+
+const ADMIN = '11111111-1111-4111-8111-111111111111'
+const REP = '22222222-2222-4222-8222-222222222222'
+const REP_B = '33333333-3333-4333-8333-333333333333'
 
 export const portalFixtures: Record<string, JsonRecord[]> = {
+  employees: [
+    { id: ADMIN, display_name: 'Morgan Admin', first_name: 'Morgan', last_name: 'Admin', email: 'morgan@cmaccontainers.com', role: 'admin', rep_code: 'CMAC-0001', active: true, auth_user_id: 'linked', updated_at: ago(0) },
+    { id: REP, display_name: 'Demo Sales Rep', first_name: 'Demo', last_name: 'Rep', email: 'demo.rep@cmaccontainers.com', role: 'sales_rep', rep_code: 'CMAC-0002', active: true, auth_user_id: 'linked', updated_at: ago(0) },
+    { id: REP_B, display_name: 'Jordan Reyes', first_name: 'Jordan', last_name: 'Reyes', email: 'jordan.reyes@cmaccontainers.com', role: 'sales_rep', rep_code: 'CMAC-0003', active: true, auth_user_id: 'linked', updated_at: ago(0) },
+  ],
   contacts: [
-    { id: 'preview-contact-1', display_name: 'Taylor Morgan', first_name: 'Taylor', last_name: 'Morgan', email: 'taylor@example.com', phone: '(512) 555-0184', city: 'Austin', state: 'TX', lifecycle_stage: 'prospect', project_address: 'Austin, TX', updated_at: iso(0), created_at: iso(12) },
-    { id: 'preview-contact-2', display_name: 'Avery Brooks', first_name: 'Avery', last_name: 'Brooks', email: 'avery@example.com', phone: '(225) 555-0137', city: 'Baton Rouge', state: 'LA', lifecycle_stage: 'lead', project_address: 'Baton Rouge, LA', updated_at: iso(1), created_at: iso(6) },
-    { id: 'preview-contact-3', display_name: 'Meridian Workforce LLC', first_name: 'Meridian', last_name: 'Workforce', email: 'projects@example.com', phone: '(918) 555-0162', city: 'Tulsa', state: 'OK', lifecycle_stage: 'customer', project_address: 'Tulsa, OK', updated_at: iso(3), created_at: iso(24) },
+    { id: 'preview-contact-1', display_name: 'Taylor Morgan', first_name: 'Taylor', last_name: 'Morgan', email: 'taylor@example.com', phone: '(512) 555-0184', company: null, city: 'Austin', state: 'TX', postal_code: '78701', lifecycle_stage: 'prospect', project_address: 'Austin, TX', billing_address: null, assigned_employee_id: REP, created_by: ADMIN, updated_at: ago(2 * HOUR), created_at: ago(12 * DAY) },
+    { id: 'preview-contact-2', display_name: 'Avery Brooks', first_name: 'Avery', last_name: 'Brooks', email: 'avery@example.com', phone: '(225) 555-0137', company: null, city: 'Baton Rouge', state: 'LA', postal_code: null, lifecycle_stage: 'lead', project_address: 'Baton Rouge, LA', billing_address: null, assigned_employee_id: REP, created_by: null, updated_at: ago(1 * DAY), created_at: ago(2 * DAY) },
+    { id: 'preview-contact-3', display_name: 'Meridian Workforce LLC', first_name: 'Meridian', last_name: 'Workforce', email: 'projects@example.com', phone: '(918) 555-0162', company: 'Meridian Workforce LLC', city: 'Tulsa', state: 'OK', postal_code: '74103', lifecycle_stage: 'customer', project_address: 'Tulsa, OK', billing_address: 'PO Box 410, Tulsa, OK', assigned_employee_id: ADMIN, created_by: ADMIN, updated_at: ago(3 * DAY), created_at: ago(40 * DAY) },
+    { id: 'preview-contact-4', display_name: 'Casey Whitfield', first_name: 'Casey', last_name: 'Whitfield', email: 'casey.whitfield@example.com', phone: '(817) 555-0121', company: null, city: 'Weatherford', state: 'TX', postal_code: null, lifecycle_stage: 'lead', project_address: 'Weatherford, TX', billing_address: null, assigned_employee_id: REP_B, created_by: REP_B, updated_at: ago(1 * DAY), created_at: ago(5 * DAY) },
+    { id: 'preview-contact-5', display_name: 'Jordan Ellis', first_name: 'Jordan', last_name: 'Ellis', email: 'jordan.ellis@example.com', phone: '(682) 555-0148', company: null, city: 'Burleson', state: 'TX', postal_code: null, lifecycle_stage: 'lead', project_address: 'Burleson, TX', billing_address: null, assigned_employee_id: REP, created_by: REP, updated_at: ago(6 * HOUR), created_at: ago(6 * DAY) },
+    { id: 'preview-contact-6', display_name: 'Riley Santos', first_name: 'Riley', last_name: 'Santos', email: 'riley.santos@example.com', phone: '(817) 555-0177', company: 'Santos Field Services', city: 'Fort Worth', state: 'TX', postal_code: null, lifecycle_stage: 'lead', project_address: 'Fort Worth, TX', billing_address: null, assigned_employee_id: null, created_by: null, updated_at: ago(4 * HOUR), created_at: ago(4 * HOUR) },
+    { id: 'preview-contact-7', display_name: 'Harper Lane', first_name: 'Harper', last_name: 'Lane', email: 'harper@example.com', phone: '(254) 555-0109', company: 'Lane Ranch Stays', city: 'Granbury', state: 'TX', postal_code: null, lifecycle_stage: 'lead', project_address: 'Granbury, TX', billing_address: null, assigned_employee_id: REP_B, created_by: ADMIN, updated_at: ago(8 * DAY), created_at: ago(21 * DAY) },
+    { id: 'preview-contact-8', display_name: 'Quinn Dawson', first_name: 'Quinn', last_name: 'Dawson', email: 'quinn.dawson@example.com', phone: '(817) 555-0190', company: null, city: 'Haslet', state: 'TX', postal_code: null, lifecycle_stage: 'inactive', project_address: 'Haslet, TX', billing_address: null, assigned_employee_id: REP, created_by: REP, updated_at: ago(18 * DAY), created_at: ago(30 * DAY) },
+    { id: 'preview-contact-9', display_name: 'Blake Turner', first_name: 'Blake', last_name: 'Turner', email: 'blake.turner@example.com', phone: '(940) 555-0155', company: null, city: 'Denton', state: 'TX', postal_code: null, lifecycle_stage: 'lead', project_address: 'Denton, TX', billing_address: null, assigned_employee_id: REP_B, created_by: null, updated_at: ago(1 * DAY), created_at: ago(1 * DAY) },
   ],
   leads: [
-    { id: 'preview-lead-1', contact_id: 'preview-contact-1', assigned_employee_id: '22222222-2222-4222-8222-222222222222', status: 'qualified', source: 'website', project_type: 'Container home', project_location: 'Austin, TX', desired_timing: '1–3 months', summary: 'Flagship model and site review.', created_at: iso(1), updated_at: iso(0), contacts: { first_name: 'Taylor', last_name: 'Morgan', display_name: 'Taylor Morgan', email: 'taylor@example.com', phone: '(512) 555-0184', project_address: 'Austin, TX' }, assigned_employee: { display_name: 'Demo Sales Rep', rep_code: 'CMAC-0002' } },
-    { id: 'preview-lead-2', contact_id: 'preview-contact-2', assigned_employee_id: '22222222-2222-4222-8222-222222222222', status: 'new', source: 'website', project_type: 'Other custom space', project_location: 'Baton Rouge, LA', desired_timing: 'Just exploring', summary: 'Flexible office and guest suite.', created_at: iso(2), updated_at: iso(1), contacts: { first_name: 'Avery', last_name: 'Brooks', display_name: 'Avery Brooks', email: 'avery@example.com', phone: '(225) 555-0137', project_address: 'Baton Rouge, LA' }, assigned_employee: { display_name: 'Demo Sales Rep', rep_code: 'CMAC-0002' } },
+    { id: 'preview-lead-1', contact_id: 'preview-contact-1', assigned_employee_id: REP, status: 'converted', source: 'website', project_type: 'Container home', project_location: 'Austin, TX', desired_timing: '1–3 months', summary: 'Flagship model and site review.', lost_reason: null, created_at: ago(12 * DAY), updated_at: ago(3 * DAY), converted_at: ago(3 * DAY) },
+    { id: 'preview-lead-2', contact_id: 'preview-contact-2', assigned_employee_id: REP, status: 'new', source: 'website', project_type: 'Other custom space', project_location: 'Baton Rouge, LA', desired_timing: 'Just exploring', summary: 'Flexible office and guest suite.', lost_reason: null, created_at: ago(2 * DAY), updated_at: ago(1 * DAY), converted_at: null },
+    { id: 'preview-lead-3', contact_id: 'preview-contact-3', assigned_employee_id: ADMIN, status: 'converted', source: 'referral', project_type: 'Workforce housing', project_location: 'Tulsa, OK', desired_timing: 'As soon as possible', summary: 'Crew housing for a 14-month pipeline job. Three units to start.', lost_reason: null, created_at: ago(40 * DAY), updated_at: ago(20 * DAY), converted_at: ago(20 * DAY) },
+    { id: 'preview-lead-4', contact_id: 'preview-contact-4', assigned_employee_id: REP_B, status: 'contacted', source: 'social', project_type: 'Hospitality or guest suite', project_location: 'Weatherford, TX', desired_timing: '3–6 months', summary: 'Saw the Weatherford lot on Instagram. Wants a mother-in-law suite behind the main house.', lost_reason: null, created_at: ago(5 * DAY), updated_at: ago(1 * DAY), converted_at: null },
+    { id: 'preview-lead-5', contact_id: 'preview-contact-5', assigned_employee_id: REP, status: 'qualified', source: 'phone', project_type: 'Container home', project_location: 'Burleson, TX', desired_timing: 'As soon as possible', summary: 'Cash buyer. Land is cleared and has utilities at the road.', lost_reason: null, created_at: ago(6 * DAY), updated_at: ago(6 * HOUR), converted_at: null },
+    { id: 'preview-lead-6', contact_id: 'preview-contact-6', assigned_employee_id: null, status: 'new', source: 'website', project_type: 'Workforce housing', project_location: 'Fort Worth, TX', desired_timing: '1–3 months', summary: 'Submitted through the CMAC Container Homes consultation form.', lost_reason: null, created_at: ago(4 * HOUR), updated_at: ago(4 * HOUR), converted_at: null },
+    { id: 'preview-lead-7', contact_id: 'preview-contact-7', assigned_employee_id: REP_B, status: 'nurturing', source: 'referral', project_type: 'Hospitality or guest suite', project_location: 'Granbury, TX', desired_timing: '6+ months', summary: 'Planning two short-term rental cabins once the lake lot closes.', lost_reason: null, created_at: ago(21 * DAY), updated_at: ago(8 * DAY), converted_at: null },
+    { id: 'preview-lead-8', contact_id: 'preview-contact-8', assigned_employee_id: REP, status: 'lost', source: 'walk_in', project_type: 'Office or studio', project_location: 'Haslet, TX', desired_timing: '3–6 months', summary: 'Backyard studio.', lost_reason: 'Chose a site-built option after HOA review.', created_at: ago(30 * DAY), updated_at: ago(18 * DAY), converted_at: null },
+    { id: 'preview-lead-9', contact_id: 'preview-contact-9', assigned_employee_id: REP_B, status: 'new', source: 'social', project_type: 'Container home', project_location: 'Denton, TX', desired_timing: 'As soon as possible', summary: 'Asked for pricing by direct message.', lost_reason: null, created_at: ago(1 * DAY), updated_at: ago(1 * DAY), converted_at: null },
   ],
   tasks: [
-    { id: 'preview-task-1', title: 'Review Taylor site photos', description: 'Confirm truck and crane access.', due_at: new Date(now - 3_600_000).toISOString(), priority: 'urgent', status: 'open', contacts: { display_name: 'Taylor Morgan' } },
-    { id: 'preview-task-2', title: 'Call Avery Brooks', description: 'Discuss build timing and finish package.', due_at: new Date(now + 86_400_000).toISOString(), priority: 'normal', status: 'open', contacts: { display_name: 'Avery Brooks' } },
+    { id: 'preview-task-1', employee_id: REP, contact_id: 'preview-contact-1', lead_id: null, deal_id: 'preview-deal-1', title: 'Review Taylor site photos', description: 'Confirm truck and crane access.', due_at: ago(1 * HOUR), priority: 'urgent', status: 'open', completed_at: null, created_at: ago(2 * DAY), updated_at: ago(2 * DAY) },
+    { id: 'preview-task-2', employee_id: REP, contact_id: 'preview-contact-2', lead_id: 'preview-lead-2', deal_id: null, title: 'Call Avery Brooks', description: 'Discuss build timing and finish package.', due_at: ahead(1 * DAY), priority: 'normal', status: 'open', completed_at: null, created_at: ago(1 * DAY), updated_at: ago(1 * DAY) },
+    { id: 'preview-task-3', employee_id: REP, contact_id: 'preview-contact-5', lead_id: 'preview-lead-5', deal_id: null, title: 'Send Jordan floor plan options', description: 'Two-bedroom layouts with the covered porch.', due_at: ago(1 * DAY), priority: 'high', status: 'open', completed_at: null, created_at: ago(3 * DAY), updated_at: ago(3 * DAY) },
+    { id: 'preview-task-4', employee_id: REP_B, contact_id: 'preview-contact-4', lead_id: 'preview-lead-4', deal_id: null, title: 'Call Casey back about financing', description: null, due_at: ahead(3 * HOUR), priority: 'high', status: 'open', completed_at: null, created_at: ago(1 * DAY), updated_at: ago(1 * DAY) },
+    { id: 'preview-task-5', employee_id: ADMIN, contact_id: 'preview-contact-3', lead_id: null, deal_id: 'preview-deal-2', title: 'Confirm Meridian delivery window', description: 'Crane is booked for the week of the 24th.', due_at: ahead(4 * DAY), priority: 'normal', status: 'open', completed_at: null, created_at: ago(2 * DAY), updated_at: ago(2 * DAY) },
+    { id: 'preview-task-6', employee_id: REP_B, contact_id: 'preview-contact-7', lead_id: 'preview-lead-7', deal_id: null, title: 'Check in with Harper on the lot closing', description: null, due_at: ago(8 * DAY), priority: 'low', status: 'completed', completed_at: ago(8 * DAY), created_at: ago(14 * DAY), updated_at: ago(8 * DAY) },
   ],
   deals: [
-    { id: 'preview-deal-1', lead_id: 'preview-lead-1', deal_number: 'CM-2026-0042', stage: 'quote', status: 'open', project_name: 'Morgan Container Home', base_amount: 50000, delivery_amount: 3500, deposit_percent: 10, updated_at: iso(0), contacts: { display_name: 'Taylor Morgan', email: 'taylor@example.com' } },
-    { id: 'preview-deal-2', deal_number: 'CM-2026-0039', stage: 'contract', status: 'open', project_name: 'Meridian Crew Housing', base_amount: 150000, delivery_amount: 9000, deposit_percent: 20, updated_at: iso(2), contacts: { display_name: 'Meridian Workforce LLC', email: 'projects@example.com' } },
+    { id: 'preview-deal-1', contact_id: 'preview-contact-1', lead_id: 'preview-lead-1', sales_rep_id: REP, deal_number: 'CM-2026-0042', stage: 'quote', status: 'open', project_name: 'Morgan Container Home', project_address: 'Austin, TX', notes: 'Converted from website lead.\nFlagship model and site review.', base_amount: 50000, delivery_amount: 3500, deposit_percent: 10, delivery_estimate: '6–8 weeks', created_at: ago(3 * DAY), updated_at: ago(2 * HOUR), signed_at: null, closed_at: null },
+    { id: 'preview-deal-2', contact_id: 'preview-contact-3', lead_id: 'preview-lead-3', sales_rep_id: ADMIN, deal_number: 'CM-2026-0039', stage: 'contract', status: 'open', project_name: 'Meridian Crew Housing', project_address: 'Tulsa, OK', notes: 'Three units, phased delivery.', base_amount: 150000, delivery_amount: 9000, deposit_percent: 20, delivery_estimate: 'Week of the 24th', created_at: ago(20 * DAY), updated_at: ago(2 * DAY), signed_at: null, closed_at: null },
+    { id: 'preview-deal-3', contact_id: 'preview-contact-3', lead_id: null, sales_rep_id: ADMIN, deal_number: 'CM-2026-0044', stage: 'draft', status: 'open', project_name: 'Meridian Phase 2', project_address: 'Tulsa, OK', notes: 'Two more units if phase 1 lands on schedule.', base_amount: 100000, delivery_amount: 6000, deposit_percent: 20, delivery_estimate: null, created_at: ago(1 * DAY), updated_at: ago(1 * DAY), signed_at: null, closed_at: null },
+  ],
+  deal_units: [
+    { id: 'preview-unit-1', deal_id: 'preview-deal-1', source: 'mock', external_unit_id: 'MODEL-LIVING-40', external_product_type: '40 ft Living Model', confirmed_by: null, confirmed_at: null, created_at: ago(3 * DAY), updated_at: ago(3 * DAY) },
+    { id: 'preview-unit-2', deal_id: 'preview-deal-2', source: 'manual', external_unit_id: 'CMH-2291', external_product_type: 'Mini Home', confirmed_by: ADMIN, confirmed_at: ago(10 * DAY), created_at: ago(20 * DAY), updated_at: ago(10 * DAY) },
   ],
   quotes: [
-    { id: 'preview-quote-1', quote_number: 'Q-2026-0018', status: 'sent', subtotal: 50000, tax: 0, delivery_amount: 3500, total: 53500, updated_at: iso(0), contacts: { display_name: 'Taylor Morgan' } },
+    { id: 'preview-quote-1', quote_number: 'Q-2026-0018', contact_id: 'preview-contact-1', lead_id: 'preview-lead-1', deal_id: 'preview-deal-1', employee_id: REP, status: 'sent', subtotal: 50000, tax: 0, delivery_amount: 3500, total: 53500, notes: null, created_at: ago(2 * DAY), updated_at: ago(2 * HOUR), sent_at: ago(2 * HOUR), accepted_at: null, expired_at: null },
+    { id: 'preview-quote-2', quote_number: 'Q-2026-0021', contact_id: 'preview-contact-3', lead_id: null, deal_id: 'preview-deal-2', employee_id: ADMIN, status: 'draft', subtotal: 150000, tax: 0, delivery_amount: 9000, total: 159000, notes: 'Pricing holds for 30 days.', created_at: ago(4 * DAY), updated_at: ago(2 * DAY), sent_at: null, accepted_at: null, expired_at: null },
+  ],
+  quote_items: [
+    { id: 'preview-quote-item-1', quote_id: 'preview-quote-1', description: '40 ft Living Model base configuration', quantity: 1, unit_price: 50000, line_total: 50000, display_order: 0, created_at: ago(2 * DAY) },
+    { id: 'preview-quote-item-2', quote_id: 'preview-quote-2', description: 'Mini Home — crew configuration', quantity: 3, unit_price: 48000, line_total: 144000, display_order: 0, created_at: ago(4 * DAY) },
+    { id: 'preview-quote-item-3', quote_id: 'preview-quote-2', description: 'Skirting and tie-down package', quantity: 3, unit_price: 2000, line_total: 6000, display_order: 1, created_at: ago(4 * DAY) },
   ],
   contracts: [
-    { id: 'preview-contract-1', status: 'delivered', provider: 'docusign', created_at: iso(2), updated_at: iso(0), provider_envelope_id: 'demo-envelope-001', contacts: { display_name: 'Meridian Workforce LLC' } },
+    { id: 'preview-contract-1', deal_id: 'preview-deal-2', contact_id: 'preview-contact-3', employee_id: ADMIN, status: 'delivered', provider: 'docusign', provider_envelope_id: 'demo-envelope-001', created_at: ago(2 * DAY), updated_at: ago(1 * DAY) },
+  ],
+  unit_sales: [],
+  marketing_sends: [
+    { id: 'preview-send-1', employee_id: REP, contact_id: 'preview-contact-1', lead_id: 'preview-lead-1', subject: 'Explore CMAC Container Homes', recipient_email: 'taylor@example.com', status: 'sent', sent_at: ago(9 * DAY), created_at: ago(9 * DAY) },
   ],
   activities: [
-    { id: 'preview-activity-1', activity_type: 'quote_sent', title: 'Quote Q-2026-0018 marked sent', description: 'External status updated manually.', created_at: iso(0) },
-    { id: 'preview-activity-2', activity_type: 'lead_created', title: 'New website inquiry', description: 'Avery Brooks requested a consultation.', created_at: iso(1) },
-    { id: 'preview-activity-3', activity_type: 'contract_viewed', title: 'Contract delivered', description: 'Awaiting customer signature.', created_at: iso(2) },
-  ],
-  employees: [
-    { id: '11111111-1111-4111-8111-111111111111', display_name: 'Morgan Admin', first_name: 'Morgan', last_name: 'Admin', email: 'morgan@cmaccontainers.com', role: 'admin', rep_code: 'CMAC-0001', active: true, auth_user_id: 'linked', updated_at: iso(0) },
-    { id: '22222222-2222-4222-8222-222222222222', display_name: 'Demo Sales Rep', first_name: 'Demo', last_name: 'Rep', email: 'demo.rep@cmaccontainers.com', role: 'sales_rep', rep_code: 'CMAC-0002', active: true, auth_user_id: 'linked', updated_at: iso(0) },
+    { id: 'preview-activity-1', activity_type: 'quote_sent', title: 'Quote Q-2026-0018 marked sent', description: 'External status updated manually.', metadata: {}, employee_id: REP, contact_id: 'preview-contact-1', lead_id: null, deal_id: 'preview-deal-1', created_at: ago(2 * HOUR) },
+    { id: 'preview-activity-2', activity_type: 'lead_created', title: 'New website inquiry', description: 'Avery Brooks requested a consultation.', metadata: {}, employee_id: null, contact_id: 'preview-contact-2', lead_id: 'preview-lead-2', deal_id: null, created_at: ago(2 * DAY) },
+    { id: 'preview-activity-3', activity_type: 'contract_viewed', title: 'Contract delivered', description: 'Awaiting customer signature.', metadata: {}, employee_id: ADMIN, contact_id: 'preview-contact-3', lead_id: null, deal_id: 'preview-deal-2', created_at: ago(1 * DAY) },
+    { id: 'preview-activity-4', activity_type: 'note_added', title: 'Call logged · Connected', description: 'Walked the lot by video. Utilities are at the road; wants the covered porch option.', metadata: { kind: 'call', outcome: 'Connected' }, employee_id: REP, contact_id: 'preview-contact-5', lead_id: 'preview-lead-5', deal_id: null, created_at: ago(6 * HOUR) },
+    { id: 'preview-activity-5', activity_type: 'status_changed', title: 'Lead status updated', description: 'contacted → qualified', metadata: { from: 'contacted', to: 'qualified' }, employee_id: REP, contact_id: 'preview-contact-5', lead_id: 'preview-lead-5', deal_id: null, created_at: ago(6 * HOUR) },
+    { id: 'preview-activity-6', activity_type: 'lead_created', title: 'Manual lead created', description: 'Container home · Burleson, TX · As soon as possible', metadata: { source: 'phone' }, employee_id: REP, contact_id: 'preview-contact-5', lead_id: 'preview-lead-5', deal_id: null, created_at: ago(6 * DAY) },
+    { id: 'preview-activity-7', activity_type: 'note_added', title: 'Call logged · Left voicemail', description: 'Left a message with the financing overview.', metadata: { kind: 'call', outcome: 'Left voicemail' }, employee_id: REP_B, contact_id: 'preview-contact-4', lead_id: 'preview-lead-4', deal_id: null, created_at: ago(1 * DAY) },
+    { id: 'preview-activity-8', activity_type: 'note_added', title: 'Email logged · Reply received', description: 'Casey asked whether the unit can be placed on a pier foundation.', metadata: { kind: 'email', outcome: 'Reply received' }, employee_id: REP_B, contact_id: 'preview-contact-4', lead_id: 'preview-lead-4', deal_id: null, created_at: ago(3 * DAY) },
+    { id: 'preview-activity-9', activity_type: 'lead_created', title: 'Website consultation received', description: 'Workforce housing · Fort Worth, TX · 1–3 months', metadata: {}, employee_id: null, contact_id: 'preview-contact-6', lead_id: 'preview-lead-6', deal_id: null, created_at: ago(4 * HOUR) },
+    { id: 'preview-activity-10', activity_type: 'note_added', title: 'Meeting logged · Showroom / lot visit', description: 'Toured both models at the Weatherford lot. Timeline depends on the lake lot closing.', metadata: { kind: 'meeting', outcome: 'Showroom / lot visit' }, employee_id: REP_B, contact_id: 'preview-contact-7', lead_id: 'preview-lead-7', deal_id: null, created_at: ago(8 * DAY) },
+    { id: 'preview-activity-11', activity_type: 'status_changed', title: 'Lead status updated', description: 'contacted → lost', metadata: { from: 'contacted', to: 'lost' }, employee_id: REP, contact_id: 'preview-contact-8', lead_id: 'preview-lead-8', deal_id: null, created_at: ago(18 * DAY) },
+    { id: 'preview-activity-12', activity_type: 'deal_created', title: 'Draft deal created', description: 'CM-2026-0042 was created from this lead.', metadata: {}, employee_id: ADMIN, contact_id: 'preview-contact-1', lead_id: 'preview-lead-1', deal_id: 'preview-deal-1', created_at: ago(3 * DAY) },
+    { id: 'preview-activity-13', activity_type: 'marketing_sent', title: 'Marketing email sent', description: 'Explore CMAC Container Homes', metadata: {}, employee_id: REP, contact_id: 'preview-contact-1', lead_id: 'preview-lead-1', deal_id: null, created_at: ago(9 * DAY) },
+    { id: 'preview-activity-14', activity_type: 'lead_created', title: 'Manual lead created', description: 'Container home · Denton, TX · As soon as possible', metadata: { source: 'social' }, employee_id: ADMIN, contact_id: 'preview-contact-9', lead_id: 'preview-lead-9', deal_id: null, created_at: ago(1 * DAY) },
   ],
   marketing_materials: [],
   document_templates: [
@@ -44,33 +100,60 @@ export const portalFixtures: Record<string, JsonRecord[]> = {
   ],
 }
 
-// Relational fixtures mirror the selected joins without ever entering production.
-const previewAdmin = portalFixtures.employees[0]
-const previewRep = portalFixtures.employees[1]
-portalFixtures.contacts.forEach((row, index) => {
-  row.assigned_employee_id = index === 2 ? previewAdmin.id : previewRep.id
-  row.created_by = previewAdmin.id
-  row.owner = index === 2 ? previewAdmin : previewRep
-  row.creator = previewAdmin
-})
-portalFixtures.leads.forEach(row => { row.owner = previewRep })
-portalFixtures.deals.forEach((row, index) => {
-  row.sales_rep_id = index === 0 ? previewRep.id : previewAdmin.id
-  row.owner = index === 0 ? previewRep : previewAdmin
-  row.contact_id = index === 0 ? 'preview-contact-1' : 'preview-contact-3'
-  row.created_at = iso(3)
-})
-portalFixtures.tasks.forEach((row, index) => {
-  row.employee_id = previewRep.id; row.owner = previewRep
-  row.contact_id = `preview-contact-${index + 1}`; row.created_at = iso(1)
-})
-portalFixtures.activities.forEach((row, index) => {
-  row.employee_id = index === 1 ? null : previewRep.id
-  row.actor = index === 1 ? null : previewRep
-  row.contact_id = `preview-contact-${index === 2 ? 3 : index + 1}`
-  row.contacts = portalFixtures.contacts.find(contact => contact.id === row.contact_id)
-  if (index === 0) row.deal_id = 'preview-deal-1'
-  if (index === 1) row.lead_id = 'preview-lead-2'
-})
-portalFixtures.quotes.forEach(row => { row.employee_id = previewRep.id; row.owner = previewRep; row.contact_id = 'preview-contact-1'; row.deal_id = 'preview-deal-1' })
-portalFixtures.contracts.forEach(row => { row.employee_id = previewAdmin.id; row.owner = previewAdmin; row.contact_id = 'preview-contact-3'; row.deal_id = 'preview-deal-2' })
+const pick = (row: JsonRecord | undefined, keys: string[]) => row ? Object.fromEntries(keys.map((key) => [key, row[key]])) : null
+const byId = (table: string, id: unknown) => id ? portalFixtures[table]?.find((row) => row.id === id) : undefined
+const employeeRef = (id: unknown) => pick(byId('employees', id), ['id', 'display_name', 'rep_code', 'role', 'active'])
+const contactRef = (id: unknown) => pick(byId('contacts', id), ['id', 'first_name', 'last_name', 'display_name', 'email', 'phone', 'company', 'project_address', 'city', 'state', 'assigned_employee_id'])
+
+/** Rebuild the embedded relations that production selects through PostgREST joins. */
+export function relinkFixtures() {
+  for (const row of portalFixtures.contacts) { row.owner = employeeRef(row.assigned_employee_id); row.creator = employeeRef(row.created_by) }
+  for (const row of portalFixtures.leads) { row.contacts = contactRef(row.contact_id); row.owner = employeeRef(row.assigned_employee_id); row.assigned_employee = row.owner }
+  for (const row of portalFixtures.deals) { row.contacts = contactRef(row.contact_id); row.owner = employeeRef(row.sales_rep_id) }
+  for (const row of portalFixtures.tasks) {
+    row.contacts = contactRef(row.contact_id); row.owner = employeeRef(row.employee_id)
+    row.deals = pick(byId('deals', row.deal_id), ['id', 'deal_number', 'project_name'])
+  }
+  for (const row of portalFixtures.quotes) {
+    row.contacts = contactRef(row.contact_id); row.owner = employeeRef(row.employee_id)
+    row.deals = pick(byId('deals', row.deal_id), ['id', 'deal_number', 'project_name', 'project_address'])
+  }
+  for (const row of portalFixtures.contracts) { row.contacts = contactRef(row.contact_id); row.owner = employeeRef(row.employee_id) }
+  for (const row of portalFixtures.activities) {
+    row.actor = employeeRef(row.employee_id); row.contacts = contactRef(row.contact_id)
+    row.deals = pick(byId('deals', row.deal_id), ['id', 'deal_number'])
+  }
+}
+
+relinkFixtures()
+
+let sequence = 0
+
+export function previewInsert(table: string, row: JsonRecord) {
+  const stamp = new Date().toISOString()
+  const full: JsonRecord = { id: `preview-${table}-new-${++sequence}`, created_at: stamp, updated_at: stamp, ...row }
+  portalFixtures[table] = [full, ...(portalFixtures[table] ?? [])]
+  relinkFixtures()
+  return full
+}
+
+export function previewUpdate(table: string, id: string, patch: JsonRecord) {
+  let updated: JsonRecord | null = null
+  portalFixtures[table] = (portalFixtures[table] ?? []).map((row) => {
+    if (row.id !== id) return row
+    updated = { ...row, ...patch, updated_at: new Date().toISOString() }
+    return updated
+  })
+  relinkFixtures()
+  return updated as JsonRecord | null
+}
+
+export function previewDelete(table: string, id: string) {
+  portalFixtures[table] = (portalFixtures[table] ?? []).filter((row) => row.id !== id)
+  relinkFixtures()
+}
+
+export function previewNextNumber(prefix: string, table: string, key: string) {
+  const highest = (portalFixtures[table] ?? []).reduce((max, row) => Math.max(max, Number(String(row[key] ?? '').split('-').pop()) || 0), 0)
+  return `${prefix}-${new Date().getFullYear()}-${String(highest + 1).padStart(4, '0')}`
+}

@@ -11,8 +11,17 @@ const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
 const EmployeePortalLayout = lazy(() => import('./layouts/EmployeePortalLayout'))
 const DashboardPage = lazy(() => import('./pages/portal/DashboardPage'))
 const ResourceListPage = lazy(() => import('./pages/portal/ResourceListPage'))
-const ResourceDetailPage = lazy(() => import('./pages/portal/ResourceDetailPage'))
 const LeadCreatePage = lazy(() => import('./pages/portal/LeadCreatePage'))
+const LeadsPage = lazy(() => import('./pages/portal/LeadsPage'))
+const LeadDetailPage = lazy(() => import('./pages/portal/LeadDetailPage'))
+const CustomersPage = lazy(() => import('./pages/portal/CustomersPage'))
+const CustomerDetailPage = lazy(() => import('./pages/portal/CustomerDetailPage'))
+const TasksPage = lazy(() => import('./pages/portal/TasksPage'))
+const DealsPage = lazy(() => import('./pages/portal/DealsPage'))
+const DealDetailPage = lazy(() => import('./pages/portal/DealDetailPage'))
+const QuotesPage = lazy(() => import('./pages/portal/QuotesPage'))
+const QuoteDetailPage = lazy(() => import('./pages/portal/QuoteDetailPage'))
+const ReportsPage = lazy(() => import('./pages/portal/ReportsPage'))
 const InventoryPage = lazy(() => import('./pages/portal/InventoryPage'))
 const NewSalePage = lazy(() => import('./pages/portal/NewSalePage'))
 const MarketingPage = lazy(() => import('./pages/portal/MarketingPage'))
@@ -67,18 +76,20 @@ export default function App() {
       <Route element={<RequireEmployee />}>
         <Route path="/employee-portal" element={<EmployeePortalLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="leads" element={<ResourceListPage resource="leads" />} />
+          <Route path="leads" element={<LeadsPage />} />
           <Route path="leads/new" element={<LeadCreatePage />} />
-          <Route path="leads/:leadId" element={<ResourceDetailPage resource="leads" />} />
-          <Route path="customers" element={<ResourceListPage resource="customers" />} />
-          <Route path="customers/:contactId" element={<ResourceDetailPage resource="customers" />} />
-          <Route path="tasks" element={<ResourceListPage resource="tasks" />} />
+          <Route path="leads/:leadId" element={<LeadDetailPage />} />
+          <Route path="customers" element={<CustomersPage />} />
+          <Route path="customers/:contactId" element={<CustomerDetailPage />} />
+          <Route path="tasks" element={<TasksPage />} />
           <Route path="inventory" element={<InventoryPage />} />
           <Route path="marketing" element={<MarketingPage />} />
           <Route path="sales/new" element={<NewSalePage />} />
-          <Route path="deals" element={<ResourceListPage resource="deals" />} />
-          <Route path="deals/:dealId" element={<ResourceDetailPage resource="deals" />} />
-          <Route path="quotes" element={<ResourceListPage resource="quotes" />} />
+          <Route path="deals" element={<DealsPage />} />
+          <Route path="deals/:dealId" element={<DealDetailPage />} />
+          <Route path="quotes" element={<QuotesPage />} />
+          <Route path="quotes/:quoteId" element={<QuoteDetailPage />} />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="contracts" element={<ResourceListPage resource="contracts" />} />
           <Route path="documents" element={<DocumentsPage />} />
           <Route element={<RequireAdmin />}>

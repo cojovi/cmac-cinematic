@@ -168,7 +168,7 @@ select throws_ok(
     (select l.id from public.leads l join public.contacts c on c.id = l.contact_id where c.email = 'manual-lead@example.com'),
     '{"status":"contacted"}'::jsonb
   )$$,
-  '42501', 'Administrator access is required to edit or convert leads',
+  '42501', 'Administrator access is required to edit or reassign leads',
   'sales representatives cannot edit a lead through the server contract'
 );
 select lives_ok(

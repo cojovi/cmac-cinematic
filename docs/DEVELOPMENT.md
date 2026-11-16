@@ -30,7 +30,7 @@ Open the local URL printed by Vite, normally **http://127.0.0.1:5173**. Allow-li
 
 ### 3. Optional portal layout preview
 
-Set `VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true` in the uncommitted local file, restart Vite, and visit `/employee-portal`. The flag requires Vite development mode and supplies a preview employee; portal preview actions are designed not to save business records.
+Set `VITE_ENABLE_LOCAL_PORTAL_PREVIEW=true` in the uncommitted local file, restart Vite, and visit `/employee-portal`. The flag requires Vite development mode and supplies a preview employee. CRM actions in preview edit an in-memory copy of the sample data so workflows can be rehearsed; nothing is saved to a database and a refresh resets it.
 
 **Preview is not a network sandbox.** Keep real service credentials out of visual-review environments. Public intake and configured integrations have their own code paths; do not submit forms against production merely to inspect the interface.
 
@@ -72,6 +72,7 @@ For a new backend, follow [production setup](../docs/PRODUCTION_SETUP.md): revie
 | `/qr` | Public three-step questionnaire; required contact fields and financing-dependent credit answer. |
 | `/login` → `/auth/callback` | Google PKCE sign-in and active-employee lookup. |
 | `/employee-portal` | Dashboard and navigation for leads, customers, tasks, inventory, marketing, deals, quotes, and documents. |
+| `/employee-portal/leads` · `/customers` · `/tasks` · `/deals` · `/quotes` · `/reports` | The CRM workspace: pipeline board, customer records, follow-up queue, deal board, quote editor, and reports. See the [CRM workspace guide](CRM_WORKSPACE.md). |
 | `/employee-portal/sales/new` | Select a model reference, record customer/site details, save a draft, and create quote records. |
 | `/employee-portal/admin/employees` | Administrator team overview, access controls, and deliberate ownership management. |
 | `/employee-portal/admin/qr` | Administrator inquiry reporting, notification status, and controlled retries. |

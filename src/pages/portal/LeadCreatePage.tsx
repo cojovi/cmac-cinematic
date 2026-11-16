@@ -1,26 +1,32 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { ArrowLeft, BriefcaseBusiness, Save, ShieldCheck, UserRoundCheck } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LeadFormFields } from '../../components/portal/LeadFormFields'
-import { ConfigurationState, PortalError, PortalLoading } from '../../components/portal/AsyncState'
-import { useAuth } from '../../auth/useAuth'
-import { usePortalRows } from '../../hooks/usePortalRows'
-import { runLeadAction } from '../../lib/lead-api'
+import { PortalError, PortalLoading } from '../../components/portal/AsyncState'
+import { useCrmRows } from '../../hooks/useCrmRows'
+import { useAction, useActor } from '../../hooks/useCrm'
+import { useToast } from '../../hooks/useToast'
+import { createLead } from '../../lib/crm/api'
 import { emptyLeadForm, leadAssigneeOptions, leadErrors, leadFormSchema, type LeadFormValues, type LeadFieldErrors } from '../../lib/lead-management'
+
+/** Another screen (a customer record, a QR inquiry) can hand over what it already knows through router state — never the URL, so contact details stay out of history and logs. */
+export interface LeadPrefill { prefill?: Partial<LeadFormValues>; origin?: string }
 
 export default function LeadCreatePage() {
   const navigate = useNavigate()
-  const { employee, previewMode } = useAuth()
-  const employees = usePortalRows('employees', { orderBy: 'display_name', ascending: true, limit: 250 })
+  const location = useLocation()
+  const actor = useActor()
+  const toast = useToast()
+  const { run, busy } = useAction()
+  const handoff = (location.state ?? {}) as LeadPrefill
+  const employees = useCrmRows('employees', { orderBy: 'display_name', ascending: true, limit: 500 })
   const [form, setForm] = useState<LeadFormValues>(() => ({
     ...emptyLeadForm,
-    assigned_employee_id: employee?.role === 'sales_rep' ? employee.id : '',
+    ...handoff.prefill,
+    assigned_employee_id: actor.isAdmin ? handoff.prefill?.assigned_employee_id ?? '' : actor.id,
   }))
   const [errors, setErrors] = useState<LeadFieldErrors>({})
-  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
-  const isAdmin = employee?.role === 'admin'
   const assignees = useMemo(() => leadAssigneeOptions(employees.rows), [employees.rows])
 
   function update<Key extends keyof LeadFormValues>(field: Key, value: LeadFormValues[Key]) {
@@ -29,42 +35,26 @@ export default function LeadCreatePage() {
     setError(null)
   }
 
-  async function createLead(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage(null)
     setError(null)
-    const parsed = leadFormSchema.safeParse({
-      ...form,
-      status: 'new',
-      assigned_employee_id: isAdmin ? form.assigned_employee_id : employee?.id ?? '',
-    })
+    const parsed = leadFormSchema.safeParse({ ...form, status: 'new', assigned_employee_id: actor.isAdmin ? form.assigned_employee_id : actor.id })
     if (!parsed.success) {
       setErrors(leadErrors(parsed.error))
       setError('Review the highlighted fields before saving this lead.')
       return
     }
-    if (previewMode) {
-      setMessage('Local preview only — the form is valid, but no lead was written to the CRM.')
-      return
-    }
-
-    setBusy(true)
-    try {
-      const result = await runLeadAction('create', {
-        ...parsed.data,
-        display_name: `${parsed.data.first_name} ${parsed.data.last_name}`.trim(),
-      })
-      if (!result.lead_id) throw new Error('The lead was accepted but no record ID was returned.')
-      if (employee?.role === 'sales_rep' && result.assigned_employee_id !== employee.id) {
-        setMessage('Lead recorded and routed to the customer’s existing owner. It is outside your assigned queue.')
+    await run(async () => {
+      const result = await createLead(actor, parsed.data)
+      if (!actor.isAdmin && result.ownerId && result.ownerId !== actor.id) {
+        // The record exists but RLS hides it from this representative, so do not navigate into a "not found".
+        toast.success('Lead recorded and routed to the customer’s existing owner. It is outside your queue.')
+        navigate('/employee-portal/leads', { replace: true })
         return
       }
-      navigate(`/employee-portal/leads/${result.lead_id}`, { replace: true })
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The lead could not be created.')
-    } finally {
-      setBusy(false)
-    }
+      toast.success('Lead created.')
+      navigate(`/employee-portal/leads/${result.leadId}`, { replace: true })
+    })
   }
 
   if (employees.loading) return <PortalLoading label="Preparing lead intake" />
@@ -77,21 +67,13 @@ export default function LeadCreatePage() {
         <div><span>CRM / MANUAL INTAKE</span><h2 id="lead-create-heading">Create a lead</h2><p>Capture phone calls, referrals, walk-ins, and other opportunities in the same accountable pipeline as website inquiries.</p></div>
         <span className="workspace-live-chip"><BriefcaseBusiness size={14} /> New opportunity</span>
       </div>
-      {previewMode ? <ConfigurationState service="Local preview" copy="The complete intake flow is available for review, but CRM writes require an authenticated production session." /> : null}
-      {isAdmin ? <div className="lead-permission-note"><ShieldCheck size={17} /><div><strong>Administrator intake</strong><span>Assign this lead to any active salesperson or administrator. Automatic round-robin selects salespeople only.</span></div></div> : <div className="lead-permission-note"><UserRoundCheck size={17} /><div><strong>Sales intake</strong><span>New leads are assigned to you unless the email already belongs to another active employee.</span></div></div>}
-      {message ? <p className="record-action-message" role="status">{message}</p> : null}
+      {handoff.origin ? <div className="lead-permission-note"><ShieldCheck size={17} /><div><strong>Started from {handoff.origin}</strong><span>The details below were carried over. Review them, fill in anything missing, then create the lead.</span></div></div> : null}
+      {actor.isAdmin ? <div className="lead-permission-note"><ShieldCheck size={17} /><div><strong>Administrator intake</strong><span>Assign this lead to any active salesperson or administrator. Automatic round-robin selects salespeople only.</span></div></div> : <div className="lead-permission-note"><UserRoundCheck size={17} /><div><strong>Sales intake</strong><span>New leads are assigned to you unless the email already belongs to another active employee.</span></div></div>}
       {error ? <p className="lead-form-alert error" role="alert">{error}</p> : null}
-      <form className="workspace-card lead-create-form" onSubmit={createLead} noValidate>
+      <form className="workspace-card lead-create-form" onSubmit={submit} noValidate>
         <div className="workspace-card-heading"><div><span>LEAD / REQUIRED DETAILS</span><h3>Customer and project information</h3></div><BriefcaseBusiness size={20} /></div>
-        <LeadFormFields
-          values={form}
-          errors={errors}
-          assignees={assignees}
-          showAssignment={isAdmin}
-          disabled={busy}
-          onChange={update}
-        />
-        <div className="lead-form-actions"><span>{isAdmin ? 'Admin may edit, reassign, and convert after creation.' : 'An administrator controls later record edits and conversion.'}</span><button className="portal-primary-button" disabled={busy} type="submit"><Save size={15} /> {busy ? 'Creating lead…' : 'Create lead'}</button></div>
+        <LeadFormFields values={form} errors={errors} assignees={assignees} showAssignment={actor.isAdmin} disabled={busy} onChange={update} />
+        <div className="lead-form-actions"><span>{actor.isAdmin ? 'You can edit and reassign after creation.' : 'After creation you can move it through the pipeline, log activity, and convert it to a deal.'}</span><button className="portal-primary-button" disabled={busy} type="submit"><Save size={15} /> {busy ? 'Creating lead…' : 'Create lead'}</button></div>
       </form>
     </section>
   )

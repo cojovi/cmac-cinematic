@@ -27,6 +27,7 @@ export const leadSources = [
   { value: 'walk_in', label: 'Walk-in' },
   { value: 'social', label: 'Social media' },
   { value: 'website', label: 'Website' },
+  { value: 'qr_code', label: 'On-site QR code' },
   { value: 'other', label: 'Other' },
 ] as const
 
@@ -65,7 +66,7 @@ export const leadFormSchema = z.object({
   last_name: z.string().trim().max(80),
   email: z.string().trim().toLowerCase().email('Enter a valid email address.').max(254),
   phone: phoneSchema,
-  source: z.enum(['phone', 'referral', 'walk_in', 'social', 'website', 'other']),
+  source: z.enum(['phone', 'referral', 'walk_in', 'social', 'website', 'qr_code', 'other']),
   status: z.enum(['new', 'contacted', 'nurturing', 'qualified', 'lost', 'archived']),
   project_type: z.string().trim().min(1, 'Select a project type.').max(80),
   project_location: z.string().trim().min(2, 'Enter the project location.').max(160),

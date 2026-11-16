@@ -1,7 +1,7 @@
 import { requireEmployee } from '../_shared/auth.ts'
 import { json, options, parseJson } from '../_shared/http.ts'
 
-type LeadAction = 'create' | 'update' | 'convert'
+type LeadAction = 'create' | 'update' | 'convert' | 'set_status'
 
 interface LeadPayload {
   first_name?: string
@@ -25,6 +25,7 @@ interface Input {
   lead?: LeadPayload
 }
 
+const actions: LeadAction[] = ['create', 'update', 'convert', 'set_status']
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 Deno.serve(async (request) => {
@@ -36,14 +37,17 @@ Deno.serve(async (request) => {
 
   try {
     const input = await parseJson<Input>(request, 16_000)
-    if (!input.action || !['create', 'update', 'convert'].includes(input.action)) {
+    if (!input.action || !actions.includes(input.action)) {
       return json(request, { error: 'Choose a supported lead action.' }, 422)
     }
     if (input.action !== 'create' && (!input.lead_id || !uuidPattern.test(input.lead_id))) {
       return json(request, { error: 'A valid lead ID is required.' }, 422)
     }
-    if (input.action !== 'create' && auth.employee.role !== 'admin') {
-      return json(request, { error: 'Administrator access is required to edit or convert leads.' }, 403)
+    // Editing details and reassigning stay administrator-only. Stage moves and
+    // conversion are also allowed for the lead's owner; the database function
+    // verifies ownership against the actor derived from this session.
+    if (input.action === 'update' && auth.employee.role !== 'admin') {
+      return json(request, { error: 'Administrator access is required to edit or reassign leads.' }, 403)
     }
     if (input.lead?.assigned_employee_id && !uuidPattern.test(input.lead.assigned_employee_id)) {
       return json(request, { error: 'Choose a valid salesperson.' }, 422)
@@ -58,9 +62,12 @@ Deno.serve(async (request) => {
     if (error) throw error
     return json(request, data, 200)
   } catch (error) {
+    const code = error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code) : ''
     console.error('manage-lead failed', error instanceof Error ? error.message : 'unknown error')
     return json(request, {
-      error: error instanceof Error ? error.message : 'The lead action could not be completed.',
-    }, 400)
+      error: error instanceof Error ? error.message
+        : error && typeof error === 'object' && 'message' in error ? String((error as { message?: unknown }).message)
+        : 'The lead action could not be completed.',
+    }, code === '42501' ? 403 : 400)
   }
 })

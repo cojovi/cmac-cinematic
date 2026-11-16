@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowDownToLine, ArrowUpRight, CheckCircle2, Mail, QrCode, RefreshCw, ScanLine, Send, TriangleAlert } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpRight, CheckCircle2, Mail, QrCode, RefreshCw, ScanLine, Send, TriangleAlert, UserPlus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { PortalEmpty, PortalError, PortalLoading } from '../../components/portal/AsyncState'
 import { supabase } from '../../lib/supabase'
 import { qrRequest, type QrReport } from '../../lib/qr-api'
+import { qrToLeadPrefill } from '../../lib/crm/qr-handoff'
 import { qrQuestions, qrRecipient, type QrEmailStatus } from '../../../supabase/functions/_shared/qr'
 
 const date = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 const statusLabels: Record<QrEmailStatus, string> = { pending: 'Awaiting email', sending: 'Sending / verify if delayed', sent: 'Email sent', failed: 'Email failed', not_configured: 'Email setup needed', unknown: 'Verify in Gmail' }
 
 export default function QrAdminPage() {
+  const navigate = useNavigate()
   const [range, setRange] = useState({ days: 30, offset: 0 })
   const [data, setData] = useState<QrReport | null>(null)
   const [loading, setLoading] = useState(true)
@@ -62,7 +65,7 @@ export default function QrAdminPage() {
       <div className="qr-inquiries-title"><h3>Inquiries</h3><span>Notifications → {qrRecipient}</span></div>
       {!data.rows.length ? <PortalEmpty title="No QR inquiries yet" copy="Completed customer forms will appear here. Counts update when you refresh this report." /> : <div className="qr-inquiries">{data.rows.map(row => <details className="qr-inquiry" key={row.id}>
         <summary><span className="qr-inquiry-person"><strong>{row.name}</strong><span>{row.location} · {row.units}</span></span><span className="qr-inquiry-date">{date.format(new Date(row.created_at))}</span><span className={row.email_status === 'sent' ? 'status-pill success' : 'status-pill warning'}>{statusLabels[row.email_status]}</span></summary>
-        <div className="qr-inquiry-body"><div className="qr-customer-contact"><a href={`mailto:${row.email}`}><Mail size={15} />{row.email}</a><a href={`tel:${row.phone.replace(/[^+\d]/g, '')}`}>{row.phone}</a></div><dl>{Object.entries(qrQuestions).map(([key, question]) => <div key={key}><dt>{question}</dt><dd>{String(row[key as keyof typeof qrQuestions] || 'Not applicable — cash')}</dd></div>)}</dl>
+        <div className="qr-inquiry-body"><div className="qr-customer-contact"><a href={`mailto:${row.email}`}><Mail size={15} />{row.email}</a><a href={`tel:${row.phone.replace(/[^+\d]/g, '')}`}>{row.phone}</a><button className="portal-secondary-button" type="button" onClick={() => navigate('/employee-portal/leads/new', { state: { prefill: qrToLeadPrefill(row), origin: `${row.name}’s QR inquiry` } })}><UserPlus size={15} />Create lead in pipeline</button></div><dl>{Object.entries(qrQuestions).map(([key, question]) => <div key={key}><dt>{question}</dt><dd>{String(row[key as keyof typeof qrQuestions] || 'Not applicable — cash')}</dd></div>)}</dl>
           <div className="qr-notification-detail"><p>{row.sent_at ? `Sent ${date.format(new Date(row.sent_at))}` : row.email_error || 'Notification has not been confirmed. A delayed “Sending” status needs manual verification in Charley’s Sent mail.'}</p>{['pending','failed','not_configured'].includes(row.email_status) && row.attempts < 5 ? <button className="portal-secondary-button" type="button" disabled={retrying !== null} onClick={() => void retry(row.id)}><RefreshCw size={15} />{retrying === row.id ? 'Retrying…' : 'Retry email to Charley'}</button> : row.attempts >= 5 ? <p>Retry limit reached. Please review email configuration.</p> : null}</div>
         </div>
       </details>)}</div>}

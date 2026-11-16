@@ -1,7 +1,7 @@
 import { expect, test } from 'playwright/test'
 
 const portalRoutes = [
-  ['/employee-portal', /Good (morning|afternoon)/],
+  ['/employee-portal', /Good (morning|afternoon|evening)/],
   ['/employee-portal/leads', 'Lead pipeline'],
   ['/employee-portal/leads/new', 'Create a lead'],
   ['/employee-portal/customers', 'Contacts & customers'],
@@ -11,6 +11,7 @@ const portalRoutes = [
   ['/employee-portal/sales/new', 'Build a clean, verifiable sale'],
   ['/employee-portal/deals', 'Deal workspace'],
   ['/employee-portal/quotes', 'Quote records'],
+  ['/employee-portal/reports', 'Reports'],
   ['/employee-portal/contracts', 'Contract tracking'],
   ['/employee-portal/documents', 'Transaction template register'],
   ['/employee-portal/admin/employees', 'Employee access'],
@@ -106,8 +107,8 @@ test('direct employee routes refresh and interactive navigation works', async ({
 
   const search = page.getByPlaceholder('Search leads')
   await search.fill('Avery')
-  await expect(page.locator('.resource-row')).toHaveCount(1)
-  await expect(page.getByText('Avery Brooks')).toBeVisible()
+  await expect(page.locator('.crm-kanban-card')).toHaveCount(1)
+  await expect(page.getByRole('link', { name: 'Avery Brooks', exact: true })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Add lead' })).toBeVisible()
 
   if ((testInfo.project.use.viewport?.width ?? 1440) <= 760) {
@@ -123,7 +124,7 @@ test('direct employee routes refresh and interactive navigation works', async ({
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
-test('manual lead intake and editing allow administrator ownership', async ({ page }, testInfo) => {
+test('manual lead intake and editing allow administrator ownership', async ({ page }) => {
   await page.route('https://crm-test.supabase.co/auth/v1/settings', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ external: { google: true } }),
   }))
@@ -131,15 +132,17 @@ test('manual lead intake and editing allow administrator ownership', async ({ pa
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
   await page.goto('/employee-portal/leads/new')
-  await expect(page).toHaveURL(/\/employee-portal\/leads\/new$/)
   await expect(page).toHaveTitle('CMAC Container Homes | Texas-Built Modular Living')
   await expect(page.getByRole('heading', { name: 'Create a lead' })).toBeVisible()
   const owner = page.getByRole('combobox', { name: 'Assigned employee', exact: true })
   await expect(owner.locator('option')).toHaveText([
     'Automatic round-robin (salespeople)',
     'Demo Sales Rep · Salesperson · CMAC-0002',
+    'Jordan Reyes · Salesperson · CMAC-0003',
     'Morgan Admin · Administrator · CMAC-0001',
   ])
+  await page.getByRole('button', { name: 'Create lead' }).click()
+  await expect(page.getByText('Review the highlighted fields before saving this lead.')).toBeVisible()
   await owner.selectOption('11111111-1111-4111-8111-111111111111')
   await page.getByLabel('First name *').fill('Morgan')
   await page.getByLabel('Last name').fill('Sample')
@@ -150,27 +153,33 @@ test('manual lead intake and editing allow administrator ownership', async ({ pa
   await page.getByLabel('Ideal timing *').selectOption({ label: '3–6 months' })
   await page.getByLabel('Project location *').fill('Fort Worth, TX')
   await page.getByRole('button', { name: 'Create lead' }).click()
-  await expect(page.getByText('Local preview only — the form is valid, but no lead was written to the CRM.')).toBeVisible()
+  // Local preview keeps writes in memory, so the new record opens like it would in production.
+  await expect(page.getByRole('heading', { name: 'Morgan Sample', level: 2 })).toBeVisible()
+  await expect(page).toHaveURL(/\/employee-portal\/leads\/preview-leads-new-/)
+  await expect(page.getByText('Manual lead created')).toBeVisible()
 
   await page.goto('/employee-portal/leads/preview-lead-2')
-  await expect(page.getByRole('heading', { name: 'Avery Brooks' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Edit, assign, and qualify' })).toBeVisible()
-  await expect(owner).toHaveValue('22222222-2222-4222-8222-222222222222')
-  await owner.selectOption('11111111-1111-4111-8111-111111111111')
-  await expect(owner).toHaveValue('11111111-1111-4111-8111-111111111111')
-  await expect(page.getByLabel('Pipeline status *')).toHaveValue('new')
-  await page.getByLabel('Pipeline status *').selectOption('contacted')
-  await page.getByRole('button', { name: 'Save lead' }).click()
-  await expect(page.getByText('Local preview only — the edit form is valid, but no CRM record was changed.')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Convert to deal' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Avery Brooks', level: 2 })).toBeVisible()
+  await page.getByRole('button', { name: 'Edit lead' }).click()
+  const drawer = page.getByRole('dialog', { name: 'Edit Avery Brooks' })
+  const drawerOwner = drawer.getByRole('combobox', { name: 'Assigned employee', exact: true })
+  await expect(drawerOwner).toHaveValue('22222222-2222-4222-8222-222222222222')
+  await drawerOwner.selectOption('11111111-1111-4111-8111-111111111111')
+  await expect(drawer.getByLabel('Pipeline status *')).toHaveValue('new')
+  await drawer.getByLabel('Pipeline status *').selectOption('contacted')
+  await drawer.getByRole('button', { name: 'Save lead' }).click()
+  await expect(page.getByText('Lead updated.')).toBeVisible()
+  await expect(drawer).toHaveCount(0)
+  await expect(page.locator('.crm-record-sub .crm-badge')).toHaveText('Contacted')
+  await expect(page.locator('.crm-facts .crm-owner')).toContainText('Morgan Admin')
+
   await page.getByRole('button', { name: 'Convert to deal' }).click()
-  await expect(page.getByText('Local preview only — conversion is ready, but no deal was created.')).toBeVisible()
+  await page.getByRole('dialog', { name: /Convert Avery Brooks/ }).getByRole('button', { name: 'Convert to deal' }).click()
+  await expect(page).toHaveURL(/\/employee-portal\/deals\//)
+  await expect(page.getByRole('heading', { name: 'Avery Brooks — Other custom space', level: 2 })).toBeVisible()
   await expect(page.locator('vite-error-overlay')).toHaveCount(0)
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   expect(errors).toEqual([])
-  if (['desktop-1440', 'mobile-375'].includes(testInfo.project.name)) {
-    await page.locator('.lead-management-card').screenshot({ path: `/private/tmp/cmac-lead-admin-${testInfo.project.name}.png` })
-  }
 })
 
 test('every employee portal destination renders without horizontal overflow', async ({ page }) => {

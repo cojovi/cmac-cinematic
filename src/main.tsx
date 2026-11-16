@@ -5,6 +5,7 @@ import './index.css'
 import './portal.css'
 import './team.css'
 import './qr.css'
+import './crm.css'
 import App from './App.tsx'
 import { AuthProvider } from './auth/AuthProvider.tsx'
 

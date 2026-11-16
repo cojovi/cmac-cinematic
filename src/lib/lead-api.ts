@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type LeadAction = 'create' | 'update' | 'convert'
+export type LeadAction = 'create' | 'update' | 'convert' | 'set_status'
 
 export interface LeadActionResult {
   lead_id?: string

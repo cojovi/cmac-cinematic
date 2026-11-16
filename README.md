@@ -78,7 +78,7 @@ VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
-This development-only preview provides a fixture employee and disables portal writes. Leave real service credentials out of this environment. A complete integration environment also needs Supabase services and the Vercel API; `npm run dev` serves only the frontend. See the [development and operations guide](docs/DEVELOPMENT.md) for configuration and routes.
+This development-only preview provides a fixture employee; CRM actions edit in-memory sample data and never reach a database. Leave real service credentials out of this environment. A complete integration environment also needs Supabase services and the Vercel API; `npm run dev` serves only the frontend. See the [development and operations guide](docs/DEVELOPMENT.md) for configuration and routes.
 
 ## Verification and scope
 
@@ -97,7 +97,7 @@ npm run build
 
 ## Go deeper
 
-[Development & configuration](docs/DEVELOPMENT.md) · [Production setup](docs/PRODUCTION_SETUP.md) · [QR intake](docs/QR_INTAKE.md) · [Team management](docs/TEAM_MANAGEMENT.md) · [Design specification](DESIGN_SPEC.md)
+[Development & configuration](docs/DEVELOPMENT.md) · [CRM workspace](docs/CRM_WORKSPACE.md) · [Production setup](docs/PRODUCTION_SETUP.md) · [QR intake](docs/QR_INTAKE.md) · [Team management](docs/TEAM_MANAGEMENT.md) · [Design specification](DESIGN_SPEC.md)
 
 ---
 

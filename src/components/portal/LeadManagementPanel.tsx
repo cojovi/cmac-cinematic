@@ -1,19 +1,11 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { ArrowRight, RefreshCw, Save, ShieldCheck } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../auth/useAuth'
-import { usePortalRows } from '../../hooks/usePortalRows'
-import { runLeadAction } from '../../lib/lead-api'
+import { Save } from 'lucide-react'
+import { useCrmRows } from '../../hooks/useCrmRows'
+import { useAction, useActor } from '../../hooks/useCrm'
+import { updateLead } from '../../lib/crm/api'
 import { leadAssigneeOptions, leadErrors, leadFormSchema, type LeadFieldErrors, type LeadFormValues } from '../../lib/lead-management'
 import type { JsonRecord } from '../../lib/database.types'
 import { LeadFormFields } from './LeadFormFields'
-
-interface LeadManagementPanelProps {
-  leadId: string
-  record: JsonRecord
-  linkedDeal?: JsonRecord
-  onSaved: () => Promise<void>
-}
 
 function nestedRecord(record: JsonRecord, key: string) {
   const value = record[key]
@@ -38,22 +30,23 @@ function valuesFromRecord(record: JsonRecord): LeadFormValues {
   }
 }
 
-export function LeadManagementPanel({ leadId, record, linkedDeal, onSaved }: LeadManagementPanelProps) {
-  const navigate = useNavigate()
-  const { previewMode } = useAuth()
-  const employees = usePortalRows('employees', { orderBy: 'display_name', ascending: true, limit: 250 })
+/**
+ * Administrator edit of a lead: customer details, project, ownership, and
+ * status in one audited save. Stage moves and conversion also live on the
+ * record header, where representatives can use them for their own leads.
+ */
+export function LeadManagementPanel({ record, onSaved }: { record: JsonRecord; onSaved: () => void }) {
+  const actor = useActor()
+  const { run, busy } = useAction()
+  const employees = useCrmRows('employees', { orderBy: 'display_name', ascending: true, limit: 500 })
   const [form, setForm] = useState<LeadFormValues>(() => valuesFromRecord(record))
   const [errors, setErrors] = useState<LeadFieldErrors>({})
-  const [busy, setBusy] = useState<'save' | 'convert' | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const isConverted = record.status === 'converted' || Boolean(linkedDeal)
   const assignees = useMemo(() => leadAssigneeOptions(employees.rows), [employees.rows])
 
   function update<Key extends keyof LeadFormValues>(field: Key, value: LeadFormValues[Key]) {
     setForm((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: undefined }))
-    setMessage(null)
     setError(null)
   }
 
@@ -65,73 +58,20 @@ export function LeadManagementPanel({ leadId, record, linkedDeal, onSaved }: Lea
       setError('Review the highlighted fields before updating this lead.')
       return
     }
-    if (previewMode) {
-      setMessage('Local preview only — the edit form is valid, but no CRM record was changed.')
+    if (!parsed.data.assigned_employee_id) {
+      setErrors((current) => ({ ...current, assigned_employee_id: 'Choose who owns this lead.' }))
       return
     }
-
-    setBusy('save')
-    setError(null)
-    setMessage(null)
-    try {
-      const result = await runLeadAction('update', {
-        ...parsed.data,
-        display_name: `${parsed.data.first_name} ${parsed.data.last_name}`.trim(),
-      }, leadId)
-      setMessage(result.message ?? 'Lead updated successfully.')
-      await onSaved()
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The lead could not be updated.')
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  async function convert() {
-    if (!form.assigned_employee_id) {
-      setErrors((current) => ({ ...current, assigned_employee_id: 'Assign an active employee before conversion.' }))
-      return
-    }
-    if (previewMode) {
-      setMessage('Local preview only — conversion is ready, but no deal was created.')
-      return
-    }
-    if (!window.confirm('Convert this lead into a new draft deal? The lead will be locked as converted and the assigned employee will own the deal.')) return
-
-    setBusy('convert')
-    setError(null)
-    setMessage(null)
-    try {
-      const result = await runLeadAction('convert', { assigned_employee_id: form.assigned_employee_id }, leadId)
-      if (!result.deal_id) throw new Error('The conversion completed without returning a deal record.')
-      navigate(`/employee-portal/deals/${result.deal_id}`)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The lead could not be converted.')
-      setBusy(null)
-    }
+    if (await run(() => updateLead(actor, record, parsed.data), 'Lead updated.')) onSaved()
   }
 
   return (
-    <form className="workspace-card lead-management-card" onSubmit={save} noValidate>
-      <div className="workspace-card-heading lead-management-heading"><div><span>ADMIN / PIPELINE CONTROL</span><h3>{isConverted ? 'Converted lead record' : 'Edit, assign, and qualify'}</h3><p>Customer details, ownership, and pipeline changes are administrator-controlled and written to the activity trail.</p></div><ShieldCheck size={21} /></div>
-      {message ? <p className="lead-form-alert success" role="status">{message}</p> : null}
+    <form className="lead-management-card" onSubmit={save} noValidate>
       {error ? <p className="lead-form-alert error" role="alert">{error}</p> : null}
-      <LeadFormFields
-        values={form}
-        errors={errors}
-        assignees={assignees}
-        showStatus
-        showAssignment
-        disabled={Boolean(busy) || isConverted}
-        onChange={update}
-      />
+      <LeadFormFields values={form} errors={errors} assignees={assignees} showStatus showAssignment disabled={busy} onChange={update} />
       <div className="lead-form-actions lead-management-actions">
-        <span>{isConverted ? 'This lead is locked; continue work from its linked deal.' : 'Saving records the administrator change in the lead timeline.'}</span>
-        <div>
-          {linkedDeal ? <Link className="portal-secondary-button" to={`/employee-portal/deals/${String(linkedDeal.id)}`}>Open {String(linkedDeal.deal_number)} <ArrowRight size={15} /></Link> : null}
-          {!isConverted ? <button className="portal-secondary-button" disabled={Boolean(busy)} type="button" onClick={() => void convert()}><RefreshCw size={15} /> {busy === 'convert' ? 'Converting…' : 'Convert to deal'}</button> : null}
-          {!isConverted ? <button className="portal-primary-button" disabled={Boolean(busy)} type="submit"><Save size={15} /> {busy === 'save' ? 'Saving…' : 'Save lead'}</button> : null}
-        </div>
+        <span>Changing the owner also moves the customer and this lead’s open follow-ups. Every save is written to the timeline.</span>
+        <div><button className="portal-primary-button" disabled={busy} type="submit"><Save size={15} /> {busy ? 'Saving…' : 'Save lead'}</button></div>
       </div>
     </form>
   )
