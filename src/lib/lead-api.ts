@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type LeadAction = 'create' | 'update' | 'convert' | 'set_status'
+export type LeadAction = 'create' | 'update' | 'convert' | 'set_status' | 'delete_lead' | 'delete_contact'
 
 export interface LeadActionResult {
   lead_id?: string
@@ -12,11 +12,11 @@ export interface LeadActionResult {
   error?: string
 }
 
-export async function runLeadAction(action: LeadAction, lead: Record<string, unknown>, leadId?: string) {
+export async function runLeadAction(action: LeadAction, lead: Record<string, unknown>, leadId?: string, contactId?: string) {
   if (!supabase) throw new Error('The CRM is not configured in this environment.')
 
   const { data, error } = await supabase.functions.invoke<LeadActionResult>('manage-lead', {
-    body: { action, lead_id: leadId, lead },
+    body: { action, lead_id: leadId, contact_id: contactId, lead },
   })
 
   if (error) {

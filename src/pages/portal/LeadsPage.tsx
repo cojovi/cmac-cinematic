@@ -1,20 +1,21 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Archive, CalendarClock, Columns3, Download, Handshake, Mail, Phone, Plus, Rows3, Search, XCircle } from 'lucide-react'
+import { Archive, CalendarClock, Columns3, Download, Handshake, Mail, Phone, Plus, Rows3, Search, Trash2, XCircle } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth'
 import { combineQueries, CRM_ROW_CAP, useCrmRows } from '../../hooks/useCrmRows'
 import { useAction, useActor, useNow } from '../../hooks/useCrm'
 import { useLeadMover } from '../../hooks/useLeadMover'
 import { useSort } from '../../hooks/useSort'
 import { PortalError, PortalLoading } from '../../components/portal/AsyncState'
+import { ConfirmDialog } from '../../components/crm/Dialog'
 import { Kanban } from '../../components/crm/Kanban'
 import { SortHeader } from '../../components/crm/SortHeader'
 import { Empty, HeatBadge, LeadStageBadge, Owner, Segmented, SelectFilter } from '../../components/crm/primitives'
-import { reassignLead, transferContact } from '../../lib/crm/api'
+import { deleteLead, reassignLead, transferContact } from '../../lib/crm/api'
 import { csvFilename, downloadCsv } from '../../lib/crm/csv'
 import { contactOf } from '../../lib/crm/links'
 import {
-  buildSignals, canConvertLead, closedLeadStatuses, daysSince, dueLabel, formatDate, humanize, isOpenLead, leadHeat, leadMoveTargets,
+  buildSignals, canConvertLead, canDeleteLead, closedLeadStatuses, daysSince, dueLabel, formatDate, humanize, isOpenLead, leadHeat, leadMoveTargets,
   leadStage, leadStages, matchesSearch, openLeadStatuses, relativeTime, telHref, type LeadStatus, type RecordSignals,
 } from '../../lib/crm/pipeline'
 import { employeeSelect } from '../../lib/team-management'
@@ -45,6 +46,7 @@ export default function LeadsPage() {
   const [focus, setFocus] = useState<Focus | null>(null)
   const [stageFilter, setStageFilter] = useState<LeadStatus | 'open' | 'all'>('open')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const query = useDeferredValue(search)
 
   const signals = useMemo(() => buildSignals('lead_id', activities.rows, tasks.rows, now), [activities.rows, now, tasks.rows])
@@ -134,6 +136,15 @@ export default function LeadsPage() {
     if (ok) setSelected(new Set())
   }
 
+  const deletable = selectedRows.filter((lead) => canDeleteLead(employee?.role, employee?.id, lead))
+
+  async function bulkDelete() {
+    const skipped = selectedRows.length - deletable.length
+    const ok = await bulk.run(async () => { for (const lead of deletable) await deleteLead(actor, lead) }, `${deletable.length} ${deletable.length === 1 ? 'lead' : 'leads'} deleted.${skipped ? ` ${skipped} skipped because ${skipped === 1 ? 'it became a deal' : 'they became deals'}.` : ''}`)
+    setConfirmBulkDelete(false)
+    if (ok) setSelected(new Set())
+  }
+
   if (page.loading) return <PortalLoading label="Loading the lead pipeline" />
   if (page.error) return <PortalError message={page.error} retry={page.reload} />
 
@@ -169,10 +180,11 @@ export default function LeadsPage() {
           {tel ? <a className="crm-icon-btn" href={tel} aria-label={`Call ${name}`} title={`Call ${String(contact.phone)}`}><Phone size={13} /></a> : null}
           {contact.email ? <a className="crm-icon-btn" href={`mailto:${String(contact.email)}`} aria-label={`Email ${name}`} title={`Email ${String(contact.email)}`}><Mail size={13} /></a> : null}
           {targets.length || canConvertLead(employee?.role, employee?.id, lead) ? (
-            <select className="crm-move" value="" disabled={mover.pendingIds.has(String(lead.id))} onChange={(event) => mover.request(lead, event.target.value as LeadStatus)} aria-label={`Move ${name}`}>
+            <select className="crm-move" value="" disabled={mover.pendingIds.has(String(lead.id))} onChange={(event) => { if (event.target.value === 'delete') mover.requestDelete(lead); else mover.request(lead, event.target.value as LeadStatus) }} aria-label={`Move ${name}`}>
               <option value="">Move…</option>
               {targets.map((target) => <option key={target} value={target}>{leadStage(target).label}</option>)}
               {canConvertLead(employee?.role, employee?.id, lead) ? <option value="converted">Convert to deal</option> : null}
+              {canDeleteLead(employee?.role, employee?.id, lead) ? <option value="delete">Delete lead…</option> : null}
             </select>
           ) : null}
         </div>
@@ -296,11 +308,13 @@ export default function LeadsPage() {
                 </select>
               ) : null}
               <button className="crm-btn small" type="button" onClick={() => exportCsv(selectedRows)}><Download size={13} />Export selected</button>
+              <button className="crm-btn danger small" type="button" disabled={!deletable.length || bulk.busy} onClick={() => setConfirmBulkDelete(true)}><Trash2 size={13} />Delete selected</button>
               <button className="crm-btn ghost small crm-right" type="button" onClick={() => setSelected(new Set())}>Clear</button>
             </div>
           ) : null}
         </>
       )}
+      {confirmBulkDelete ? <ConfirmDialog title={`Delete ${deletable.length} ${deletable.length === 1 ? 'lead' : 'leads'}?`} body={`This permanently removes ${deletable.length === 1 ? 'this lead' : 'these leads'} with their follow-ups and timeline entries. Customer records stay.${selectedRows.length > deletable.length ? ` ${selectedRows.length - deletable.length} selected ${selectedRows.length - deletable.length === 1 ? 'lead became a deal' : 'leads became deals'} and will be skipped.` : ''} It cannot be undone from the portal.`} confirmLabel="Delete leads" danger busy={bulk.busy} onClose={() => setConfirmBulkDelete(false)} onConfirm={() => void bulkDelete()} /> : null}
       {mover.dialogs}
     </section>
   )

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { Archive, ArrowLeft, CalendarClock, ClipboardList, Handshake, History, Link2, MessageSquarePlus, Pencil, RotateCcw, XCircle } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Archive, ArrowLeft, CalendarClock, ClipboardList, Handshake, History, Link2, MessageSquarePlus, Pencil, RotateCcw, Trash2, XCircle } from 'lucide-react'
 import { useAuth } from '../../auth/useAuth'
 import { combineQueries, useCrmRows } from '../../hooks/useCrmRows'
 import { useActor, useNow } from '../../hooks/useCrm'
@@ -13,7 +13,7 @@ import { FollowUpCard } from '../../components/crm/FollowUps'
 import { Timeline } from '../../components/crm/Timeline'
 import { ContactActions, DealStageBadge, HeatBadge, LeadStageBadge, Owner } from '../../components/crm/primitives'
 import { contactOf } from '../../lib/crm/links'
-import { canConvertLead, formatMoney, dealValue, humanize, isOpenLead, leadHeat, leadMoveTargets, leadStage, openLeadStatuses, relativeTime, type LeadStatus } from '../../lib/crm/pipeline'
+import { canConvertLead, canDeleteLead, formatMoney, dealValue, humanize, isOpenLead, leadHeat, leadMoveTargets, leadStage, openLeadStatuses, relativeTime, type LeadStatus } from '../../lib/crm/pipeline'
 import { activitySelect, employeeSelect, formatRecordDate } from '../../lib/team-management'
 
 const leadSelect = '*,contacts(id,first_name,last_name,display_name,email,phone,company,project_address,assigned_employee_id),owner:employees!leads_assigned_employee_id_fkey(id,display_name,rep_code)'
@@ -24,6 +24,7 @@ export default function LeadDetailPage() {
   const { employee } = useAuth()
   const actor = useActor()
   const now = useNow()
+  const navigate = useNavigate()
   const lead = useCrmRows('leads', { select: leadSelect, filter: { column: 'id', value: leadId } })
   const activities = useCrmRows('activities', { select: activitySelect, filter: { column: 'lead_id', value: leadId }, orderBy: 'created_at', limit: 200 })
   const tasks = useCrmRows('tasks', { select: taskSelect, filter: { column: 'lead_id', value: leadId }, orderBy: 'due_at', ascending: true, limit: 200 })
@@ -70,6 +71,7 @@ export default function LeadDetailPage() {
             {targets.includes('lost') ? <button className="crm-btn" type="button" onClick={() => mover.request(record, 'lost')}><XCircle size={14} />Mark lost</button> : null}
             {targets.includes('archived') && isOpenLead(record) ? <button className="crm-btn ghost" type="button" onClick={() => mover.request(record, 'archived')}><Archive size={14} />Archive</button> : null}
             {!isOpenLead(record) && targets.includes('new') ? <button className="crm-btn" type="button" onClick={() => mover.request(record, 'contacted')}><RotateCcw size={14} />Reopen</button> : null}
+            {canDeleteLead(employee?.role, employee?.id, record) && !deal ? <button className="crm-btn danger" type="button" onClick={() => mover.requestDelete(record, () => navigate('/employee-portal/leads', { replace: true }))}><Trash2 size={14} />Delete</button> : null}
             {convertible ? <button className="crm-btn primary" type="button" onClick={() => mover.request(record, 'converted')}><Handshake size={15} />Convert to deal</button> : null}
             {deal ? <Link className="crm-btn primary" to={`/employee-portal/deals/${String(deal.id)}`}>Open {String(deal.deal_number)}</Link> : null}
           </div>

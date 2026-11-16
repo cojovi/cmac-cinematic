@@ -157,6 +157,44 @@ export async function reassignLead(lead: JsonRecord, employeeId: string) {
   invalidateCrm('leads', 'contacts', 'tasks', 'activities')
 }
 
+const leadHasDealMessage = 'This lead became a deal and is part of its history. It cannot be deleted.'
+const contactHasHistoryMessage = 'This customer has deals, quotes, contracts, or sent marketing on record and cannot be deleted. Mark them inactive instead.'
+
+/**
+ * Permanently deletes a lead with its follow-ups and timeline entries. The
+ * customer record stays. The server keeps a full copy in the audit log.
+ */
+export async function deleteLead(actor: Actor, lead: JsonRecord) {
+  const id = String(lead.id)
+  if (preview) {
+    if (lead.status === 'converted' || portalFixtures.deals.some((deal) => deal.lead_id === id)) throw new Error(leadHasDealMessage)
+    for (const table of ['tasks', 'activities']) for (const row of portalFixtures[table].filter((item) => item.lead_id === id)) previewDelete(table, String(row.id))
+    previewDelete('leads', id)
+    previewActivity({ activity_type: 'status_changed', title: 'Lead deleted', description: [lead.project_type, lead.project_location, humanize(lead.status).toLowerCase()].filter(Boolean).join(' · '), employee_id: actor.id, contact_id: lead.contact_id })
+  } else {
+    await runLeadAction('delete_lead', {}, id)
+  }
+  invalidateCrm('leads', 'tasks', 'activities')
+}
+
+/**
+ * Permanently deletes a customer with their leads, follow-ups, and timeline.
+ * Refused when the customer has deals, quotes, contracts, or sent marketing.
+ */
+export async function deleteContact(contact: JsonRecord) {
+  const id = String(contact.id)
+  if (preview) {
+    if (['deals', 'quotes', 'contracts', 'marketing_sends'].some((table) => portalFixtures[table].some((row) => row.contact_id === id))) throw new Error(contactHasHistoryMessage)
+    const leadIds = new Set(portalFixtures.leads.filter((lead) => lead.contact_id === id).map((lead) => lead.id))
+    for (const table of ['tasks', 'activities']) for (const row of portalFixtures[table].filter((item) => item.contact_id === id || leadIds.has(item.lead_id))) previewDelete(table, String(row.id))
+    for (const leadId of leadIds) previewDelete('leads', String(leadId))
+    previewDelete('contacts', id)
+  } else {
+    await runLeadAction('delete_contact', {}, undefined, id)
+  }
+  invalidateCrm('contacts', 'leads', 'tasks', 'activities')
+}
+
 // --- Timeline --------------------------------------------------------------
 
 export interface TouchInput {
@@ -314,6 +352,17 @@ export async function updateContact(id: string, input: ContactInput) {
     if (!data?.length) throw new Error('This contact is no longer accessible. Refresh and try again.')
   }
   invalidateCrm('contacts', 'leads', 'deals')
+}
+
+/** Change only where a customer sits in the lifecycle — used to retire a customer whose sales history must be kept. */
+export async function setContactLifecycle(id: string, stage: 'lead' | 'prospect' | 'customer' | 'inactive') {
+  if (preview) previewUpdate('contacts', id, { lifecycle_stage: stage })
+  else {
+    const { data, error } = await db().from('contacts').update({ lifecycle_stage: stage }).eq('id', id).select('id')
+    if (error) fail(error, 'The customer could not be updated.')
+    if (!data?.length) throw new Error('This customer is no longer accessible. Refresh and try again.')
+  }
+  invalidateCrm('contacts')
 }
 
 export async function transferContact(contact: JsonRecord, employeeId: string) {

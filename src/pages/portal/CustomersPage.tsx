@@ -1,15 +1,15 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Download, Plus, Search } from 'lucide-react'
+import { Download, Plus, Search, Trash2 } from 'lucide-react'
 import { combineQueries, CRM_ROW_CAP, useCrmRows } from '../../hooks/useCrmRows'
 import { useAction, useActor, useNow } from '../../hooks/useCrm'
 import { useSort } from '../../hooks/useSort'
 import { PortalError, PortalLoading } from '../../components/portal/AsyncState'
 import { ContactForm } from '../../components/crm/ContactForm'
-import { Dialog } from '../../components/crm/Dialog'
+import { ConfirmDialog, Dialog } from '../../components/crm/Dialog'
 import { SortHeader } from '../../components/crm/SortHeader'
 import { ContactActions, Empty, Owner, SelectFilter, StatusBadge } from '../../components/crm/primitives'
-import { transferContact } from '../../lib/crm/api'
+import { deleteContact, transferContact } from '../../lib/crm/api'
 import { csvFilename, downloadCsv } from '../../lib/crm/csv'
 import { countBy, formatDate, humanize, isOpenDeal, isOpenLead, matchesSearch, relativeTime } from '../../lib/crm/pipeline'
 import { employeeSelect } from '../../lib/team-management'
@@ -35,6 +35,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const [lifecycle, setLifecycle] = useState('all')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const query = useDeferredValue(search)
 
   const openLeads = useMemo(() => countBy(leads.rows.filter(isOpenLead), (row) => String(row.contact_id)), [leads.rows])
@@ -85,6 +86,20 @@ export default function CustomersPage() {
     if (ok) setSelected(new Set())
   }
 
+  async function bulkDelete() {
+    await bulk.run(async () => {
+      const refused: string[] = []
+      let deleted = 0
+      // Each customer is its own audited server transaction, so one refusal does not stop the rest.
+      for (const row of selectedRows) {
+        try { await deleteContact(row); deleted += 1 } catch { refused.push(String(row.display_name ?? row.email)) }
+      }
+      setSelected(new Set())
+      if (refused.length) throw new Error(`${deleted} deleted. ${refused.length} kept because ${refused.length === 1 ? 'it has' : 'they have'} deals, quotes, or sent marketing on record: ${refused.join(', ')}. Mark ${refused.length === 1 ? 'it' : 'them'} inactive instead.`)
+    }, `${selectedRows.length} ${selectedRows.length === 1 ? 'customer' : 'customers'} deleted.`)
+    setConfirmDelete(false)
+  }
+
   if (page.loading) return <PortalLoading label="Loading customers" />
   if (page.error) return <PortalError message={page.error} retry={page.reload} />
 
@@ -116,7 +131,7 @@ export default function CustomersPage() {
         <div className="crm-table-wrap">
           <table className="crm-table">
             <thead><tr>
-              {actor.isAdmin ? <th className="check"><input type="checkbox" aria-label="Select all customers shown" checked={selectedRows.length === table.sorted.length} onChange={(event) => setSelected(event.target.checked ? new Set(table.sorted.map((row) => String(row.id))) : new Set())} /></th> : null}
+              <th className="check"><input type="checkbox" aria-label="Select all customers shown" checked={selectedRows.length === table.sorted.length} onChange={(event) => setSelected(event.target.checked ? new Set(table.sorted.map((row) => String(row.id))) : new Set())} /></th>
               <SortHeader label="Customer" column="name" ariaSort={table.ariaSort} onSort={table.toggle} />
               <th>Reach</th>
               <SortHeader label="Location" column="location" ariaSort={table.ariaSort} onSort={table.toggle} />
@@ -132,7 +147,7 @@ export default function CustomersPage() {
                 const name = String(row.display_name ?? row.email)
                 return (
                   <tr key={id} className={selected.has(id) ? 'selected' : undefined}>
-                    {actor.isAdmin ? <td className="check"><input type="checkbox" aria-label={`Select ${name}`} checked={selected.has(id)} onChange={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next })} /></td> : null}
+                    <td className="check"><input type="checkbox" aria-label={`Select ${name}`} checked={selected.has(id)} onChange={() => setSelected((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next })} /></td>
                     <td><div className="crm-cell-main"><Link to={`/employee-portal/customers/${id}`}>{name}</Link><span>{[row.company && row.company !== name ? row.company : null, row.email].filter(Boolean).join(' · ')}</span></div></td>
                     <td><div style={{ display: 'flex', gap: 4 }}><ContactActions name={name} phone={row.phone} email={row.email} size={13} /></div></td>
                     <td>{[row.city, row.state].filter(Boolean).join(', ') || <span className="crm-dim">—</span>}</td>
@@ -148,17 +163,21 @@ export default function CustomersPage() {
           </table>
         </div>
       )}
-      {actor.isAdmin && selectedRows.length ? (
+      {selectedRows.length ? (
         <div className="crm-bulkbar" role="region" aria-label="Bulk actions">
           <strong>{selectedRows.length} selected</strong>
-          <select className="crm-move" style={{ marginLeft: 0, maxWidth: 200, height: 32 }} value="" disabled={bulk.busy} onChange={(event) => { if (event.target.value) void bulkTransfer(event.target.value) }} aria-label="Transfer selected customers to an employee">
-            <option value="">Transfer owner…</option>
-            {employees.rows.filter((person) => person.active).map((person) => <option key={String(person.id)} value={String(person.id)}>{String(person.display_name)}</option>)}
-          </select>
+          {actor.isAdmin ? (
+            <select className="crm-move" style={{ marginLeft: 0, maxWidth: 200, height: 32 }} value="" disabled={bulk.busy} onChange={(event) => { if (event.target.value) void bulkTransfer(event.target.value) }} aria-label="Transfer selected customers to an employee">
+              <option value="">Transfer owner…</option>
+              {employees.rows.filter((person) => person.active).map((person) => <option key={String(person.id)} value={String(person.id)}>{String(person.display_name)}</option>)}
+            </select>
+          ) : null}
           <button className="crm-btn small" type="button" onClick={() => exportCsv(selectedRows)}><Download size={13} />Export selected</button>
+          <button className="crm-btn danger small" type="button" disabled={bulk.busy} onClick={() => setConfirmDelete(true)}><Trash2 size={13} />Delete selected</button>
           <button className="crm-btn ghost small crm-right" type="button" onClick={() => setSelected(new Set())}>Clear</button>
         </div>
       ) : null}
+      {confirmDelete ? <ConfirmDialog title={`Delete ${selectedRows.length} ${selectedRows.length === 1 ? 'customer' : 'customers'}?`} body="This permanently removes each customer with their leads, follow-ups, and timeline entries. Customers that have deals, quotes, or sent marketing on record are kept and reported back. It cannot be undone from the portal." confirmLabel="Delete customers" danger busy={bulk.busy} onClose={() => setConfirmDelete(false)} onConfirm={() => void bulkDelete()} /> : null}
       {creating ? <Dialog title="Add a customer" eyebrow="CRM / NEW CONTACT" onClose={() => setParam('new', null)}><ContactForm onCancel={() => setParam('new', null)} onSaved={(id) => navigate(`/employee-portal/customers/${id}`)} /></Dialog> : null}
     </section>
   )

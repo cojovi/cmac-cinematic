@@ -30,8 +30,21 @@ Row-level security and the audited server functions remain the source of truth; 
 | Edit a lead's customer/project details; reassign a lead | No | Yes |
 | Transfer a customer and their open work | No | Yes |
 | Log activity, manage follow-ups, edit deals and quotes | Own records | Any record |
+| Delete a lead (not one that became a deal) | Own leads | Any lead |
+| Delete a customer (none with deals, quotes, contracts, or sent marketing) | Own customers | Any customer |
 
 **This is the one deliberate policy change in the release.** Before it, a representative could create a lead but never record progress on it, so every lead stayed at *New* until an administrator edited it. Ownership and detail edits are still administrator-only. To keep the old behaviour, release the frontend without the migration and function below: representatives will then see a clear "administrator access is required" message when they try to move a lead, and everything else still works.
+
+## Deleting records
+
+Delete is on the lead record, the board card's **Move…** menu, the customer record, and the bulk bar of both tables. Every delete confirms first.
+
+- A lead takes its follow-ups and timeline entries with it; the customer stays and gets a "Lead deleted" entry.
+- A customer takes their leads, follow-ups, and timeline entries.
+- A lead that became a deal, and a customer with deals, quotes, contracts, or sent marketing, cannot be deleted. The customer record offers **Mark inactive** instead.
+- Before deleting, the server writes a full copy to `private.audit_log` (`lead_deleted` / `contact_deleted`). There is no undo in the portal; an administrator restores from that copy.
+
+Browser roles still hold no delete privilege on `leads` or `contacts`. Deletion goes through `manage-lead` → `public.delete_crm_record`, which is executable only by the service role.
 
 ## How activity is stored
 
@@ -43,11 +56,12 @@ Reports and list signals are calculated in the browser from the records RLS retu
 
 ## Release
 
-Deploy in this order. Nothing here is applied automatically.
+Backend steps 1–3 were applied to `cmac_crm` on November 16, 2026. The order matters if they are ever replayed on another project.
 
 1. **Migration** `supabase/migrations/20261115203000_crm_pipeline_workspace.sql` — replaces `public.manage_lead` with the same function plus a `set_status` action, owner conversion, and the `qr_code` source. No tables, grants, or policies change; the function remains executable only by the service role.
-2. **Edge Function** `manage-lead` (with `_shared`) — accepts `set_status` and lets owners reach `convert`; `update` stays administrator-only. The actor is still derived from the session, never from the request body.
-3. **Frontend** — no new environment variables.
+2. **Migration** `supabase/migrations/20261116054500_crm_record_deletion.sql` — adds `public.delete_crm_record` and the service-role grants it needs (`delete` on leads and contacts; `select` on contracts, marketing sends, activities).
+3. **Edge Function** `manage-lead` (with `_shared`) — accepts `set_status`, `delete_lead`, and `delete_contact`, and lets owners reach `convert`; `update` stays administrator-only. The actor is still derived from the session, never from the request body.
+4. **Frontend** — no new environment variables.
 
 Rolling back is the reverse: redeploy the previous function and re-run the `manage_lead` definition from `20260917172254_team_management.sql`. No data migration is involved either way.
 
@@ -60,7 +74,7 @@ The sample data is deliberately tiny — the preview account, **one** sample sal
 ## Verification
 
 - `npm run lint`, `npm test`, `npm run build`.
-- `npm run test:e2e` — `tests/e2e/crm.spec.ts` drives the board, table, bulk actions, activity logging, follow-up queue, customer create/edit, command palette, deal → quote, and sale completion at 375 / 768 / 1024 / 1440 px, and asserts the production request a representative's stage move sends.
-- `npm run db:test` — `supabase/tests/crm_pipeline_workspace.test.sql` covers the new server rules (ownership boundary, lost reason, archive/reopen, owner conversion, idempotent repeats, audit entries) alongside the existing suites.
+- `npm run test:e2e` — `tests/e2e/crm.spec.ts` drives the board, table, bulk actions, activity logging, follow-up queue, customer create/edit, command palette, deal → quote, sale completion, and lead/customer deletion at 375 / 768 / 1024 / 1440 px, and asserts the production requests a representative's stage move and deletes send.
+- `npm run db:test` — `supabase/tests/crm_pipeline_workspace.test.sql` covers the new server rules (ownership boundary, lost reason, archive/reopen, owner conversion, idempotent repeats, audit entries) and `supabase/tests/crm_record_deletion.test.sql` covers deletion (ownership, the sales-history guard, cascades, audit snapshots), alongside the existing suites.
 
 Not exercised with live services: real Google sign-in, Gmail delivery, and the deferred DocuSign flow.

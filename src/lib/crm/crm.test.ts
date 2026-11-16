@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { matchesTimelineFilter, timelineKind, touchTitle } from './activity'
 import { toCsv } from './csv'
 import {
-  buildSignals, canConvertLead, dealValue, dueLabel, leadFunnel, leadHeat, leadMoveTargets, matchesSearch, presetDue, relativeTime,
+  buildSignals, canConvertLead, canDeleteContact, canDeleteLead, dealValue, dueLabel, leadFunnel, leadHeat, leadMoveTargets, matchesSearch, presetDue, relativeTime,
   sourceBreakdown, taskBucket, weeklyCounts, weightedDealValue,
 } from './pipeline'
 import { qrToLeadPrefill } from './qr-handoff'
@@ -29,6 +29,23 @@ describe('lead permissions shown in the UI', () => {
     expect(leadMoveTargets('admin', 'admin', { ...mine, status: 'lost' })).toContain('contacted')
     expect(leadMoveTargets('admin', 'admin', { ...mine, status: 'converted' })).toEqual([])
     expect(canConvertLead('admin', 'admin', { ...mine, status: 'converted' })).toBe(false)
+  })
+})
+
+describe('who is offered delete', () => {
+  it('offers it to the owner and to administrators, for open and closed leads alike', () => {
+    expect(canDeleteLead('sales_rep', 'rep', { status: 'new', assigned_employee_id: 'rep' })).toBe(true)
+    expect(canDeleteLead('sales_rep', 'rep', { status: 'lost', assigned_employee_id: 'rep' })).toBe(true)
+    expect(canDeleteLead('admin', 'admin', { status: 'archived', assigned_employee_id: 'rep' })).toBe(true)
+    expect(canDeleteContact('sales_rep', 'rep', { assigned_employee_id: 'rep' })).toBe(true)
+    expect(canDeleteContact('admin', 'admin', { assigned_employee_id: null })).toBe(true)
+  })
+  it('never offers it on someone else’s record or on a lead that became a deal', () => {
+    expect(canDeleteLead('sales_rep', 'other', { status: 'new', assigned_employee_id: 'rep' })).toBe(false)
+    expect(canDeleteLead('admin', 'admin', { status: 'converted', assigned_employee_id: 'rep' })).toBe(false)
+    expect(canDeleteLead('sales_rep', undefined, { status: 'new', assigned_employee_id: undefined })).toBe(false)
+    expect(canDeleteContact('sales_rep', 'other', { assigned_employee_id: 'rep' })).toBe(false)
+    expect(canDeleteContact('sales_rep', 'rep', { assigned_employee_id: null })).toBe(false)
   })
 })
 

@@ -59,6 +59,22 @@ export function canConvertLead(role: string | undefined, employeeId: string | un
   return role === 'admin' || (Boolean(employeeId) && lead.assigned_employee_id === employeeId)
 }
 
+/**
+ * Deleting is open to every signed-in employee for records they own (an
+ * administrator: any record). A lead that became a deal is part of that sale's
+ * history and cannot be deleted by anyone. The server enforces the same rules,
+ * and additionally refuses customers that have deals, quotes, contracts, or
+ * sent marketing on record.
+ */
+export function canDeleteLead(role: string | undefined, employeeId: string | undefined, lead: JsonRecord) {
+  if (lead.status === 'converted') return false
+  return role === 'admin' || (Boolean(employeeId) && lead.assigned_employee_id === employeeId)
+}
+
+export function canDeleteContact(role: string | undefined, employeeId: string | undefined, contact: JsonRecord) {
+  return role === 'admin' || (Boolean(employeeId) && contact.assigned_employee_id === employeeId)
+}
+
 // ---------------------------------------------------------------------------
 // Lead heat — a transparent prioritisation hint, never stored
 // ---------------------------------------------------------------------------

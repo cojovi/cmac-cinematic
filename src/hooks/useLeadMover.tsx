@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { JsonRecord } from '../lib/database.types'
-import { convertLead, setLeadStatus } from '../lib/crm/api'
+import { convertLead, deleteLead, setLeadStatus } from '../lib/crm/api'
 import { leadStage, openLeadStatuses, type LeadStatus } from '../lib/crm/pipeline'
 import { contactOf } from '../lib/crm/links'
 import { ConfirmDialog, ReasonDialog } from '../components/crm/Dialog'
@@ -10,13 +10,13 @@ import { useAction, useActor } from './useCrm'
 /**
  * One place for every way a lead changes stage — board drag, card menu, table
  * row, bulk bar, and the record page. Working-stage moves save immediately;
- * closing moves (lost, archive, convert) ask first.
+ * closing moves (lost, archive, convert) and deleting ask first.
  */
 export function useLeadMover() {
   const actor = useActor()
   const navigate = useNavigate()
   const { run, busy } = useAction()
-  const [prompt, setPrompt] = useState<{ lead: JsonRecord; target: LeadStatus } | null>(null)
+  const [prompt, setPrompt] = useState<{ lead: JsonRecord; target: LeadStatus | 'delete'; onDeleted?: () => void } | null>(null)
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set())
 
   const move = useCallback(async (lead: JsonRecord, target: LeadStatus, reason = '') => {
@@ -33,11 +33,15 @@ export function useLeadMover() {
     else setPrompt({ lead, target })
   }, [move])
 
+  const requestDelete = useCallback((lead: JsonRecord, onDeleted?: () => void) => setPrompt({ lead, target: 'delete', onDeleted }), [])
+
   let dialogs: ReactNode = null
   if (prompt) {
     const name = String(contactOf(prompt.lead).display_name ?? 'this lead')
     const close = () => setPrompt(null)
-    if (prompt.target === 'lost') {
+    if (prompt.target === 'delete') {
+      dialogs = <ConfirmDialog title={`Delete this lead for ${name}?`} body="This permanently removes the lead with its follow-ups and timeline entries. The customer record stays. It cannot be undone from the portal; an administrator can recover it from the audit log." confirmLabel="Delete lead" danger busy={busy} onClose={close} onConfirm={() => void run(() => deleteLead(actor, prompt.lead), `Lead for ${name} deleted.`).then((ok) => { if (ok) { close(); prompt.onDeleted?.() } })} />
+    } else if (prompt.target === 'lost') {
       dialogs = <ReasonDialog title={`Mark ${name} lost?`} body="The lead leaves the working pipeline. The reason is saved on the record and shows in reporting." label="Why was it lost?" confirmLabel="Mark lost" busy={busy} onClose={close} onConfirm={(reason) => void move(prompt.lead, 'lost', reason).then((ok) => { if (ok) close() })} />
     } else if (prompt.target === 'converted') {
       dialogs = <ConfirmDialog title={`Convert ${name} to a deal?`} body="A draft deal is created for this customer and the lead is locked as converted. Open follow-ups stay with the owner." confirmLabel="Convert to deal" busy={busy} onClose={close} onConfirm={() => void run(async () => {
@@ -50,5 +54,5 @@ export function useLeadMover() {
     }
   }
 
-  return { request, move, dialogs, pendingIds, busy }
+  return { request, requestDelete, move, dialogs, pendingIds, busy }
 }

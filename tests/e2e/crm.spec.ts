@@ -219,7 +219,93 @@ test('a deal can only be marked sold with confirmed units, then becomes a perman
   await noOverflow(page)
 })
 
-test('in production a representative’s stage move goes through the audited lead function', async ({ page }) => {
+test('a lead can be deleted from its record, the board, or in bulk; a lead that became a deal cannot', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  // A converted lead is part of its deal's history: no delete control at all.
+  await page.goto('/employee-portal/leads/preview-lead-1')
+  await expect(page.getByRole('heading', { name: 'Taylor Morgan', level: 2 })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Delete' })).toHaveCount(0)
+
+  // Bulk: selecting both leads deletes the open one and skips the converted one.
+  await page.goto('/employee-portal/leads?view=table')
+  await page.getByRole('button', { name: /^All/ }).click()
+  await expect(page.locator('.crm-table tbody tr')).toHaveCount(2)
+  await page.getByRole('checkbox', { name: 'Select all leads shown' }).check()
+  await page.getByRole('button', { name: 'Delete selected' }).click()
+  const bulk = page.getByRole('dialog', { name: 'Delete 1 lead?' })
+  await expect(bulk).toContainText('1 selected lead became a deal and will be skipped.')
+  await bulk.getByRole('button', { name: 'Delete leads' }).click()
+  await expect(page.getByText('1 lead deleted. 1 skipped because it became a deal.')).toBeVisible()
+  await expect(page.locator('.crm-table tbody tr')).toHaveCount(1)
+
+  // From the record page, after cancelling once.
+  await page.goto('/employee-portal/leads/preview-lead-2')
+  await page.getByRole('button', { name: 'Delete' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Delete this lead for Taylor Morgan?' })
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Taylor Morgan', level: 2 })).toBeVisible()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('dialog', { name: 'Delete this lead for Taylor Morgan?' }).getByRole('button', { name: 'Delete lead' }).click()
+  await expect(page.getByText('Lead for Taylor Morgan deleted.')).toBeVisible()
+  await expect(page).toHaveURL(/\/employee-portal\/leads$/)
+  await expect(page.getByText('No open leads')).toBeVisible()
+  // The customer survives and their timeline records what happened.
+  await page.getByRole('button', { name: 'Search the CRM' }).click()
+  await page.getByRole('dialog', { name: 'Search the CRM' }).getByRole('combobox').fill('taylor')
+  await page.getByRole('dialog', { name: 'Search the CRM' }).getByRole('combobox').press('Enter')
+  await expect(page.getByRole('heading', { name: 'Taylor Morgan', level: 2 })).toBeVisible()
+  await expect(page.locator('.crm-timeline')).toContainText('Lead deleted')
+  await expect(page.locator('.crm-task', { hasText: 'Call Taylor about the guest suite' })).toHaveCount(0)
+
+  // From a board card's menu.
+  await page.goto('/employee-portal/leads')
+  await page.getByRole('combobox', { name: 'Move Taylor Morgan' }).selectOption('delete')
+  await page.getByRole('dialog', { name: 'Delete this lead for Taylor Morgan?' }).getByRole('button', { name: 'Delete lead' }).click()
+  await expect(page.getByText('Lead for Taylor Morgan deleted.')).toBeVisible()
+  await expect(page.locator('.crm-kanban-card')).toHaveCount(0)
+  await noOverflow(page)
+  expect(errors).toEqual([])
+})
+
+test('a customer can be deleted unless they have sales history, which offers inactive instead', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('/employee-portal/customers/preview-contact-1')
+  await page.getByRole('button', { name: 'Delete' }).click()
+  const blocked = page.getByRole('dialog', { name: 'Taylor Morgan can’t be deleted' })
+  await expect(blocked).toContainText('deals, quotes, or sent marketing on record')
+  await blocked.getByRole('button', { name: 'Mark inactive' }).click()
+  await expect(page.getByText('Taylor Morgan marked inactive.')).toBeVisible()
+  await expect(page.locator('.crm-record-sub .crm-badge')).toHaveText('Inactive')
+
+  // A customer with no sales history is removed with their leads.
+  await page.getByRole('link', { name: 'Customers', exact: true }).first().click()
+  await page.getByRole('button', { name: 'Add customer' }).click()
+  const add = page.getByRole('dialog', { name: 'Add a customer' })
+  await add.getByLabel('First name *').fill('Dana')
+  await add.getByLabel('Last name').fill('Whitaker')
+  await add.getByLabel('Email *').fill('dana.whitaker@example.com')
+  await add.getByRole('button', { name: 'Create customer' }).click()
+  await expect(page.getByRole('heading', { name: 'Dana Whitaker', level: 2 })).toBeVisible()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('dialog', { name: 'Delete Dana Whitaker?' }).getByRole('button', { name: 'Delete customer' }).click()
+  await expect(page.getByText('Dana Whitaker deleted.')).toBeVisible()
+  await expect(page).toHaveURL(/\/employee-portal\/customers$/)
+  await expect(page.locator('.crm-table tbody tr')).toHaveCount(1)
+
+  // Bulk delete reports the customer it had to keep.
+  await page.getByRole('checkbox', { name: 'Select all customers shown' }).check()
+  await page.getByRole('button', { name: 'Delete selected' }).click()
+  await page.getByRole('dialog', { name: 'Delete 1 customer?' }).getByRole('button', { name: 'Delete customers' }).click()
+  await expect(page.getByText(/0 deleted\. 1 kept because it has deals, quotes, or sent marketing on record: Taylor Morgan/)).toBeVisible()
+  await expect(page.locator('.crm-table tbody tr')).toHaveCount(1)
+  await noOverflow(page)
+  expect(errors).toEqual([])
+})
+
+test('in production a representative’s stage moves and deletes go through the audited lead function', async ({ page }) => {
   const base = portalFixtures.employees[1]
   const rep = { ...base, id: String(base.id), email: String(base.email), auth_user_id: 'b2222222-2222-4222-8222-222222222222' }
   const expiresAt = Math.floor(Date.now() / 1000) + 3600
@@ -227,6 +313,7 @@ test('in production a representative’s stage move goes through the audited lea
   const session = { access_token: `test.${Buffer.from(JSON.stringify({ sub: user.id, exp: expiresAt })).toString('base64url')}.test`, refresh_token: 'test-only', token_type: 'bearer', expires_in: 3600, expires_at: expiresAt, user }
   await page.addInitScript(value => localStorage.setItem('sb-crm-test-auth-token', JSON.stringify(value)), session)
   const leads = portalFixtures.leads.filter(lead => lead.assigned_employee_id === rep.id).map(lead => ({ ...lead }))
+  const contacts = portalFixtures.contacts.filter(contact => contact.assigned_employee_id === rep.id).map(contact => ({ ...contact }))
   const calls: Record<string, unknown>[] = []
   let refuse = true
   await page.route('https://crm-test.supabase.co/**', async route => {
@@ -236,9 +323,16 @@ test('in production a representative’s stage move goes through the audited lea
     else if (url.pathname === '/auth/v1/user') data = user
     else if (url.pathname === '/rest/v1/employees') data = url.searchParams.has('auth_user_id') ? rep : [rep]
     else if (url.pathname === '/rest/v1/leads') data = leads
+    else if (url.pathname === '/rest/v1/contacts') data = url.searchParams.has('id') ? contacts.filter(contact => `eq.${String(contact.id)}` === url.searchParams.get('id')) : contacts
     else if (url.pathname === '/functions/v1/manage-lead') {
-      const body = route.request().postDataJSON() as { action: string; lead_id: string; lead: { status: string } }
+      const body = route.request().postDataJSON() as { action: string; lead_id: string; contact_id?: string; lead: { status: string } }
       calls.push(body)
+      if (body.action === 'delete_lead' || body.action === 'delete_contact') {
+        if (body.action === 'delete_lead') leads.splice(leads.findIndex(item => item.id === body.lead_id), 1)
+        else contacts.splice(contacts.findIndex(item => item.id === body.contact_id), 1)
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ deleted: true }) })
+        return
+      }
       if (refuse) { await route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'You can only change leads assigned to you' }) }); return }
       const lead = leads.find(item => item.id === body.lead_id)
       if (lead) lead.status = body.lead.status
@@ -252,7 +346,7 @@ test('in production a representative’s stage move goes through the audited lea
   // Representatives get no owner filter and no archive option.
   await expect(page.getByLabel('Assigned employee')).toHaveCount(0)
   const move = page.getByRole('combobox', { name: 'Move Taylor Morgan' })
-  await expect(move.locator('option')).toHaveText(['Move…', 'Contacted', 'Nurturing', 'Qualified', 'Lost', 'Convert to deal'])
+  await expect(move.locator('option')).toHaveText(['Move…', 'Contacted', 'Nurturing', 'Qualified', 'Lost', 'Convert to deal', 'Delete lead…'])
 
   await move.selectOption('contacted')
   await expect(page.getByText('You can only change leads assigned to you')).toBeVisible()
@@ -265,4 +359,19 @@ test('in production a representative’s stage move goes through the audited lea
   expect(calls).toHaveLength(2)
   expect(calls[1]).toMatchObject({ action: 'set_status', lead_id: 'preview-lead-2', lead: { status: 'contacted' } })
   expect(calls[1]).not.toHaveProperty('actor_employee_id')
+
+  // Deleting goes through the same audited function. The actor is never sent by the browser.
+  await move.selectOption('delete')
+  await page.getByRole('dialog', { name: 'Delete this lead for Taylor Morgan?' }).getByRole('button', { name: 'Delete lead' }).click()
+  await expect(page.getByText('Lead for Taylor Morgan deleted.')).toBeVisible()
+  expect(calls[2]).toMatchObject({ action: 'delete_lead', lead_id: 'preview-lead-2' })
+  expect(calls[2]).not.toHaveProperty('actor_employee_id')
+
+  await page.goto('http://127.0.0.1:4174/employee-portal/customers/preview-contact-1')
+  await expect(page.getByRole('heading', { name: 'Taylor Morgan', level: 2 })).toBeVisible()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('dialog', { name: 'Delete Taylor Morgan?' }).getByRole('button', { name: 'Delete customer' }).click()
+  await expect(page.getByText('Taylor Morgan deleted.')).toBeVisible()
+  expect(calls[3]).toMatchObject({ action: 'delete_contact', contact_id: 'preview-contact-1' })
+  expect(calls[3]).not.toHaveProperty('actor_employee_id')
 })

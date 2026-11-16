@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRightLeft, BookOpenCheck, BriefcaseBusiness, CalendarClock, History, IdCard, MessageSquarePlus, Pencil, Plus, ReceiptText, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, BookOpenCheck, BriefcaseBusiness, CalendarClock, History, IdCard, MessageSquarePlus, Pencil, Plus, ReceiptText, Send, Trash2 } from 'lucide-react'
 import { combineQueries, useCrmRows } from '../../hooks/useCrmRows'
-import { useActor, useNow } from '../../hooks/useCrm'
+import { useAction, useActor, useNow } from '../../hooks/useCrm'
 import { PortalEmpty, PortalError, PortalLoading } from '../../components/portal/AsyncState'
 import ContactAssignmentPanel from '../../components/portal/ContactAssignmentPanel'
 import { ActivityComposer } from '../../components/crm/ActivityComposer'
 import { ContactForm } from '../../components/crm/ContactForm'
-import { Dialog } from '../../components/crm/Dialog'
+import { ConfirmDialog, Dialog } from '../../components/crm/Dialog'
 import { FollowUpCard } from '../../components/crm/FollowUps'
 import { Timeline } from '../../components/crm/Timeline'
 import { ContactActions, DealStageBadge, Empty, LeadStageBadge, Owner, StatusBadge } from '../../components/crm/primitives'
-import { dealValue, formatDate, formatMoney, relativeTime } from '../../lib/crm/pipeline'
+import { deleteContact, setContactLifecycle } from '../../lib/crm/api'
+import { canDeleteContact, dealValue, formatDate, formatMoney, relativeTime } from '../../lib/crm/pipeline'
 import { activitySelect, employeeName, employeeSelect, formatRecordDate } from '../../lib/team-management'
 import type { LeadPrefill } from './LeadCreatePage'
 
@@ -34,6 +35,8 @@ export default function CustomerDetailPage() {
   const employees = useCrmRows('employees', { enabled: actor.isAdmin, select: employeeSelect, orderBy: 'display_name', ascending: true, limit: 500 })
   const page = combineQueries(contact, activities, tasks, leads, deals, quotes, sends)
   const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const { run, busy } = useAction()
 
   if (page.loading) return <PortalLoading label="Opening customer" />
   if (page.error) return <PortalError message={page.error} retry={page.reload} />
@@ -42,6 +45,8 @@ export default function CustomerDetailPage() {
 
   const name = String(record.display_name ?? record.email)
   const target = { contactId, ownerId: record.assigned_employee_id ? String(record.assigned_employee_id) : null }
+  // Sales history backs attribution and cannot be deleted; the server enforces this too (including contracts).
+  const hasHistory = deals.rows.length > 0 || quotes.rows.length > 0 || sends.rows.length > 0
   const address = [record.project_address, [record.city, record.state].filter(Boolean).join(', '), record.postal_code].filter(Boolean)
   const prefill: LeadPrefill = {
     origin: `${name}’s customer record`,
@@ -66,6 +71,7 @@ export default function CustomerDetailPage() {
           <div className="crm-record-actions">
             <ContactActions name={name} phone={record.phone} email={record.email} />
             <button className="crm-btn" type="button" onClick={() => setEditing(true)}><Pencil size={14} />Edit details</button>
+            {canDeleteContact(actor.role, actor.id, record) ? <button className="crm-btn danger" type="button" onClick={() => setDeleting(true)}><Trash2 size={14} />Delete</button> : null}
             <button className="crm-btn primary" type="button" onClick={() => navigate('/employee-portal/leads/new', { state: prefill })}><Plus size={15} />New lead</button>
           </div>
         </div>
@@ -128,6 +134,17 @@ export default function CustomerDetailPage() {
           ) : null}
         </aside>
       </div>
+      {deleting && hasHistory ? (
+        <Dialog title={`${name} can’t be deleted`} eyebrow="CUSTOMER / SALES HISTORY" onClose={() => setDeleting(false)}>
+          <p>This customer has deals, quotes, or sent marketing on record. That history backs sales attribution, so the record is kept.</p>
+          <p>Mark them inactive instead: they drop out of the active lists but their history stays intact.</p>
+          <div className="crm-form-actions">
+            <button className="crm-btn ghost" type="button" onClick={() => setDeleting(false)}>Close</button>
+            {record.lifecycle_stage !== 'inactive' ? <button className="crm-btn primary" type="button" disabled={busy} onClick={() => void run(() => setContactLifecycle(contactId, 'inactive'), `${name} marked inactive.`).then(() => setDeleting(false))}>Mark inactive</button> : null}
+          </div>
+        </Dialog>
+      ) : null}
+      {deleting && !hasHistory ? <ConfirmDialog title={`Delete ${name}?`} body={`This permanently removes the customer${leads.rows.length ? `, ${leads.rows.length} ${leads.rows.length === 1 ? 'lead' : 'leads'},` : ''} and all of their follow-ups and timeline entries. It cannot be undone from the portal; an administrator can recover it from the audit log.`} confirmLabel="Delete customer" danger busy={busy} onClose={() => setDeleting(false)} onConfirm={() => void run(() => deleteContact(record), `${name} deleted.`).then((ok) => { if (ok) navigate('/employee-portal/customers', { replace: true }); else setDeleting(false) })} /> : null}
       {editing ? <Dialog title={`Edit ${name}`} eyebrow="CUSTOMER / DETAILS" variant="drawer" onClose={() => setEditing(false)}><ContactForm record={record} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} /></Dialog> : null}
     </section>
   )
